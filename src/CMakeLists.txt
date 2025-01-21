@@ -10,4 +10,9 @@ add_library(protoSerializer
   SerializerGen.cpp
 )
 
+add_library(protoDeserializer
+  Deserializer.cpp
+)
+
 target_link_libraries(protoSerializer ${LIBS})
+target_link_libraries(protoDeserializer ${LIBS})
