@@ -14,6 +14,9 @@ protobuf_generate_cpp(PROTO_SRC PROTO_HEADER ${PROTOS})
 add_library(proto ${PROTO_HEADER} ${PROTO_SRC})
 target_link_libraries(
     proto ${Protobuf_LIBRARIES}
+    protobuf::libprotobuf
     absl::log_internal_message
     absl::log_internal_check_op
+    absl::raw_logging_internal
+    absl::spinlock_wait
 )

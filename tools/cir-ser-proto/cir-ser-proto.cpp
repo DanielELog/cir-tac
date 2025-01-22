@@ -22,6 +22,7 @@
 #include <llvm/Support/ErrorHandling.h>
 
 #include <tuple>
+#include <filesystem>
 
 using namespace protocir;
 
