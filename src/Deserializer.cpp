@@ -22,10 +22,10 @@ Deserializer::deserializeRecordKind(CIRRecordKind pKind) {
 mlir::Type Deserializer::getType(ModuleInfo &mInfo,
                                  const CIRTypeID &typeId) {
   auto typeIdStr = typeId.id();
-  if (!mInfo.types.contains(typeIdStr)) {
-    defineType(mInfo, mInfo.serTypes[typeIdStr]);
+  if (mInfo.types.find(typeIdStr) == mInfo.types.end()) {
+    defineType(mInfo, mInfo.serTypes.at(typeIdStr));
   }
-  auto rTy = mInfo.types[typeIdStr];
+  auto rTy = mInfo.types.at(typeIdStr);
   return rTy;
 }
 
@@ -89,7 +89,7 @@ void Deserializer::defineType(ModuleInfo &mInfo,
       {
         auto memTy = getType(mInfo, pTy.data_member_type().member_ty());
         auto clsTy = getType(mInfo, pTy.data_member_type().cls_ty());
-        assert((mlir::isa<cir::StructType, mlir::Type>(clsTy))
+        assert((mlir::isa<cir::StructType>(clsTy))
                 && "clsTy should be a StructType!");
         cir::DataMemberType::get(ctx, memTy,
                                  mlir::cast<cir::StructType>(clsTy));
@@ -126,10 +126,10 @@ void Deserializer::defineType(ModuleInfo &mInfo,
     case CIRType::KindCase::kMethodType:
       {
         auto memTy = getType(mInfo, pTy.method_type().member_func_ty());
-        assert((mlir::isa<cir::FuncType, mlir::Type>(memTy))
+        assert((mlir::isa<cir::FuncType>(memTy))
                 && "memberFuncTy should be a FuncType!");
         auto clsTy = getType(mInfo, pTy.method_type().cls_ty());
-        assert((mlir::isa<cir::StructType, mlir::Type>(clsTy))
+        assert((mlir::isa<cir::StructType>(clsTy))
                 && "clsTy should be a StructType!");
         cir::MethodType::get(ctx, mlir::cast<cir::FuncType>(memTy),
                              mlir::cast<cir::StructType>(clsTy));
@@ -213,54 +213,99 @@ void Deserializer::deserializeBlock(FunctionInfo &fInfo,
   
 }
 
-mlir::Operation Deserializer::deserializeOp(FunctionInfo &fInfo,
-                                            const CIROp &pOp) {
+mlir::Operation *Deserializer::deserializeOp(FunctionInfo &fInfo,
+                                             const CIROp &pOp) {
+  auto builder = fInfo.owner.builder;
+  auto ctx = &fInfo.owner.ctx;
+  
   switch (pOp.operation_case()) {
     case CIROp::OperationCase::kFuncOp:
-      {
-        auto linkage = EnumsDeserializer::de
-      }
-      break;
+      return deserializeFuncOp(fInfo.owner, pOp.func_op());
     default:
       llvm_unreachable("NYI");
   }
 }
 
+cir::FuncOp Deserializer::deserializeFuncOp(ModuleInfo &mInfo,
+                                            const CIRFuncOp &pFuncOp) {
+  auto builder = mInfo.builder;
+  auto ctx = &mInfo.ctx;
+
+  auto type = getType(mInfo, pFuncOp.function_type());
+  assert((mlir::isa<cir::FuncType>(type))
+    && "FunctionType is not an instance of cir::FuncType!");
+  auto op = builder.create<cir::FuncOp>(builder.getUnknownLoc(), pFuncOp.sym_name(),
+    mlir::cast<cir::FuncType>(type));
+
+  op.setSymName(pFuncOp.sym_name());
+  auto linkage =
+    EnumsDeserializer::deserializeGlobalLinkageKind(pFuncOp.linkage());
+  op.setLinkage(linkage);
+
+  auto visibility = EnumsDeserializer::deserializeVisibilityKind(
+    pFuncOp.global_visibility());
+  auto visibilityAttr = cir::VisibilityAttr::get(ctx, visibility);
+  op.setGlobalVisibilityAttr(visibilityAttr);
+
+  op.setExtraAttrsAttr(cir::ExtraFuncAttributesAttr::get(
+      ctx, builder.getDictionaryAttr({})));
+
+  op.setBuiltin(pFuncOp.builtin());
+  op.setCoroutine(pFuncOp.coroutine());
+  op.setComdat(pFuncOp.comdat());
+  op.setLambda(pFuncOp.lambda());
+  op.setNoProto(pFuncOp.lambda());
+  op.setDsolocal(pFuncOp.dsolocal());
+  
+  auto callConv =
+    EnumsDeserializer::deserializeCallingConv(pFuncOp.calling_conv());
+  op.setCallingConv(callConv);
+
+  if (pFuncOp.has_sym_visibility()) {
+    op.setSymVisibility(pFuncOp.sym_visibility());
+  }
+  if (pFuncOp.has_aliasee()) {
+    op.setAliasee(pFuncOp.aliasee());
+  }
+  // TODO: astAttr
+  return op;
+}
+
 void Deserializer::deserializeFunc(ModuleInfo &mInfo,
                                    const CIRFunction &pFunc) {
-  auto funcOp = deserializeFuncOp(mInfo, pFunc.info());
   auto funcInfo = FunctionInfo(mInfo);
-  if (pFunc.blocks_size() > 0)
+  auto funcOp = deserializeFuncOp(mInfo, pFunc.info());
+  /*if (pFunc.blocks_size() > 0)
     funcInfo.blocks[pFunc.blocks()[0].id().id()] = funcOp.addEntryBlock();
   for (int bbId = 1; bbId < pFunc.blocks_size(); bbId++) {
     funcInfo.blocks[pFunc.blocks()[bbId].id().id()] = funcOp.addBlock();
-  }
+  }*/
   for (auto bb : pFunc.blocks()) {
-    deserializeBlock(funcInfo, bb);
+    // deserializeBlock(funcInfo, bb);
   }
   mInfo.module.push_back(funcOp);
   mInfo.funcs[pFunc.id().id()] = &funcOp;
 }
 
-mlir::ModuleOp Deserializer::deserializeModule(const CIRModule &pModule) {
-  auto mlirCtx = mlir::MLIRContext();
-  mlirCtx.loadDialect<cir::CIRDialect>();
-  auto builder = cir::CIRBaseBuilderTy(mlirCtx);
+mlir::ModuleOp Deserializer::deserializeModule(mlir::MLIRContext &ctx,
+                                               const CIRModule &pModule) {
+  auto builder = cir::CIRBaseBuilderTy(ctx);
+  std::cout << "Deserializing module named: " << pModule.id().id() << std::endl;
   auto newModule = mlir::ModuleOp::create(builder.getUnknownLoc(),
                                           pModule.id().id());
   cir::CIRDataLayout dataLayout(newModule);
 
-  auto mInfo = ModuleInfo(mlirCtx, builder, dataLayout, newModule);
+  auto mInfo = ModuleInfo(ctx, builder, dataLayout, newModule);
 
   aggregateTypes(mInfo, pModule);
 
-  std::vector<cir::FuncOp*> funcs;
   for (auto pFunc : pModule.functions()) {
+    deserializeFunc(mInfo, pFunc);
   }
 
   std::cout << "Types present:" << std::endl;
   for (auto ty : pModule.types()) {
-    std::cout << ty.name() << std::endl;
+    std::cout << ty.kind_case() << std::endl;
   }
 
   assert(mlir::verify(newModule).succeeded());

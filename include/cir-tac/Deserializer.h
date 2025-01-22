@@ -11,19 +11,20 @@
 #include <mlir/IR/Types.h>
 
 #include <vector>
+#include <unordered_map>
 
 namespace protocir {
-using TypeIDCache = llvm::DenseMap<std::string, mlir::Type>;
+using TypeIDCache = std::unordered_map<std::string, mlir::Type>;
 
-using SerializedTypeCache = llvm::DenseMap<std::string, CIRType&>;
+using SerializedTypeCache = std::unordered_map<std::string, CIRType>;
 
 using BlockIDCache = llvm::DenseMap<uint64_t, mlir::Block *>;
 
-using GlobalOPIDCache = llvm::DenseMap<std::string, cir::GlobalOp *>;
+using GlobalOPIDCache = std::unordered_map<std::string, cir::GlobalOp *>;
 
 using OperationIDCache = llvm::DenseMap<uint64_t, mlir::Operation *>;
 
-using FunctionIDCache = llvm::DenseMap<std::string, cir::FuncOp *>;
+using FunctionIDCache = std::unordered_map<std::string, cir::FuncOp *>;
 
 struct ModuleInfo {
   SerializedTypeCache serTypes;
@@ -78,8 +79,8 @@ private:
   static void deserializeGlobal(ModuleInfo &mInfo, 
                                 const CIRGlobal &pGlobal);
 
-  static mlir::Operation deserializeOp(FunctionInfo &fInfo,
-                                       const CIROp &pOp);
+  static mlir::Operation *deserializeOp(FunctionInfo &fInfo,
+                                        const CIROp &pOp);
 
   static cir::FuncOp deserializeFuncOp(ModuleInfo &mInfo,
                                        const CIRFuncOp &pFuncOp);
@@ -87,6 +88,7 @@ public:
   static cir::StructType::RecordKind
   deserializeRecordKind(CIRRecordKind pKind);
 
-  static mlir::ModuleOp deserializeModule(const CIRModule &pModule);
+  static mlir::ModuleOp deserializeModule(mlir::MLIRContext &ctx,
+                                          const CIRModule &pModule);
 };
 }

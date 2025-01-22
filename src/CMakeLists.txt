@@ -12,6 +12,7 @@ add_library(protoSerializer
 
 add_library(protoDeserializer
   Deserializer.cpp
+  EnumsDeserializerGen.cpp
 )
 
 target_link_libraries(protoSerializer ${LIBS})

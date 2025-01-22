@@ -1,5 +1,6 @@
 set(LIBS
     proto
+    protoDeserializer
     clangTooling
     MLIRCIR
 )
