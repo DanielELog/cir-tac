@@ -5,7 +5,7 @@
 namespace protocir {
 
 ::cir::AsmFlavor
-EnumDeserializer::deserializeAsmFlavor(CIRAsmFlavor &pKind) {
+EnumsDeserializer::deserializeAsmFlavor(const CIRAsmFlavor &pKind) {
   switch (pKind) {
     case protocir::CIRAsmFlavor::AsmFlavor_X86Att:
       return ::cir::AsmFlavor::x86_att;
@@ -19,7 +19,7 @@ EnumDeserializer::deserializeAsmFlavor(CIRAsmFlavor &pKind) {
 }
 
 ::cir::AtomicFetchKind
-EnumDeserializer::deserializeAtomicFetchKind(CIRAtomicFetchKind &pKind) {
+EnumsDeserializer::deserializeAtomicFetchKind(const CIRAtomicFetchKind &pKind) {
   switch (pKind) {
     case protocir::CIRAtomicFetchKind::AtomicFetchKind_Add:
       return ::cir::AtomicFetchKind::Add;
@@ -51,7 +51,7 @@ EnumDeserializer::deserializeAtomicFetchKind(CIRAtomicFetchKind &pKind) {
 }
 
 ::cir::AwaitKind
-EnumDeserializer::deserializeAwaitKind(CIRAwaitKind &pKind) {
+EnumsDeserializer::deserializeAwaitKind(const CIRAwaitKind &pKind) {
   switch (pKind) {
     case protocir::CIRAwaitKind::AwaitKind_Init:
       return ::cir::AwaitKind::init;
@@ -71,7 +71,7 @@ EnumDeserializer::deserializeAwaitKind(CIRAwaitKind &pKind) {
 }
 
 ::cir::BinOpKind
-EnumDeserializer::deserializeBinOpKind(CIRBinOpKind &pKind) {
+EnumsDeserializer::deserializeBinOpKind(const CIRBinOpKind &pKind) {
   switch (pKind) {
     case protocir::CIRBinOpKind::BinOpKind_Mul:
       return ::cir::BinOpKind::Mul;
@@ -103,7 +103,7 @@ EnumDeserializer::deserializeBinOpKind(CIRBinOpKind &pKind) {
 }
 
 ::cir::BinOpOverflowKind
-EnumDeserializer::deserializeBinOpOverflowKind(CIRBinOpOverflowKind &pKind) {
+EnumsDeserializer::deserializeBinOpOverflowKind(const CIRBinOpOverflowKind &pKind) {
   switch (pKind) {
     case protocir::CIRBinOpOverflowKind::BinOpOverflowKind_Add:
       return ::cir::BinOpOverflowKind::Add;
@@ -120,7 +120,7 @@ EnumDeserializer::deserializeBinOpOverflowKind(CIRBinOpOverflowKind &pKind) {
 }
 
 ::cir::CallingConv
-EnumDeserializer::deserializeCallingConv(CIRCallingConv &pKind) {
+EnumsDeserializer::deserializeCallingConv(const CIRCallingConv &pKind) {
   switch (pKind) {
     case protocir::CIRCallingConv::CallingConv_C:
       return ::cir::CallingConv::C;
@@ -137,7 +137,7 @@ EnumDeserializer::deserializeCallingConv(CIRCallingConv &pKind) {
 }
 
 ::cir::CaseOpKind
-EnumDeserializer::deserializeCaseOpKind(CIRCaseOpKind &pKind) {
+EnumsDeserializer::deserializeCaseOpKind(const CIRCaseOpKind &pKind) {
   switch (pKind) {
     case protocir::CIRCaseOpKind::CaseOpKind_Default:
       return ::cir::CaseOpKind::Default;
@@ -157,7 +157,7 @@ EnumDeserializer::deserializeCaseOpKind(CIRCaseOpKind &pKind) {
 }
 
 ::cir::CastKind
-EnumDeserializer::deserializeCastKind(CIRCastKind &pKind) {
+EnumsDeserializer::deserializeCastKind(const CIRCastKind &pKind) {
   switch (pKind) {
     case protocir::CIRCastKind::CastKind_IntToBool:
       return ::cir::CastKind::int_to_bool;
@@ -237,7 +237,7 @@ EnumDeserializer::deserializeCastKind(CIRCastKind &pKind) {
 }
 
 ::cir::CatchParamKind
-EnumDeserializer::deserializeCatchParamKind(CIRCatchParamKind &pKind) {
+EnumsDeserializer::deserializeCatchParamKind(const CIRCatchParamKind &pKind) {
   switch (pKind) {
     case protocir::CIRCatchParamKind::CatchParamKind_Begin:
       return ::cir::CatchParamKind::begin;
@@ -251,7 +251,7 @@ EnumDeserializer::deserializeCatchParamKind(CIRCatchParamKind &pKind) {
 }
 
 ::cir::CmpOpKind
-EnumDeserializer::deserializeCmpOpKind(CIRCmpOpKind &pKind) {
+EnumsDeserializer::deserializeCmpOpKind(const CIRCmpOpKind &pKind) {
   switch (pKind) {
     case protocir::CIRCmpOpKind::CmpOpKind_Lt:
       return ::cir::CmpOpKind::lt;
@@ -277,7 +277,7 @@ EnumDeserializer::deserializeCmpOpKind(CIRCmpOpKind &pKind) {
 }
 
 ::cir::CmpOrdering
-EnumDeserializer::deserializeCmpOrdering(CIRCmpOrdering &pKind) {
+EnumsDeserializer::deserializeCmpOrdering(const CIRCmpOrdering &pKind) {
   switch (pKind) {
     case protocir::CIRCmpOrdering::CmpOrdering_Strong:
       return ::cir::CmpOrdering::Strong;
@@ -291,7 +291,7 @@ EnumDeserializer::deserializeCmpOrdering(CIRCmpOrdering &pKind) {
 }
 
 ::cir::ComplexBinOpKind
-EnumDeserializer::deserializeComplexBinOpKind(CIRComplexBinOpKind &pKind) {
+EnumsDeserializer::deserializeComplexBinOpKind(const CIRComplexBinOpKind &pKind) {
   switch (pKind) {
     case protocir::CIRComplexBinOpKind::ComplexBinOpKind_Mul:
       return ::cir::ComplexBinOpKind::Mul;
@@ -305,7 +305,7 @@ EnumDeserializer::deserializeComplexBinOpKind(CIRComplexBinOpKind &pKind) {
 }
 
 ::cir::ComplexRangeKind
-EnumDeserializer::deserializeComplexRangeKind(CIRComplexRangeKind &pKind) {
+EnumsDeserializer::deserializeComplexRangeKind(const CIRComplexRangeKind &pKind) {
   switch (pKind) {
     case protocir::CIRComplexRangeKind::ComplexRangeKind_Full:
       return ::cir::ComplexRangeKind::Full;
@@ -328,7 +328,7 @@ EnumDeserializer::deserializeComplexRangeKind(CIRComplexRangeKind &pKind) {
 }
 
 ::cir::DynamicCastKind
-EnumDeserializer::deserializeDynamicCastKind(CIRDynamicCastKind &pKind) {
+EnumsDeserializer::deserializeDynamicCastKind(const CIRDynamicCastKind &pKind) {
   switch (pKind) {
     case protocir::CIRDynamicCastKind::DynamicCastKind_Ptr:
       return ::cir::DynamicCastKind::ptr;
@@ -342,7 +342,7 @@ EnumDeserializer::deserializeDynamicCastKind(CIRDynamicCastKind &pKind) {
 }
 
 ::cir::GlobalLinkageKind
-EnumDeserializer::deserializeGlobalLinkageKind(CIRGlobalLinkageKind &pKind) {
+EnumsDeserializer::deserializeGlobalLinkageKind(const CIRGlobalLinkageKind &pKind) {
   switch (pKind) {
     case protocir::CIRGlobalLinkageKind::GlobalLinkageKind_ExternalLinkage:
       return ::cir::GlobalLinkageKind::ExternalLinkage;
@@ -380,7 +380,7 @@ EnumDeserializer::deserializeGlobalLinkageKind(CIRGlobalLinkageKind &pKind) {
 }
 
 ::cir::InlineKind
-EnumDeserializer::deserializeInlineKind(CIRInlineKind &pKind) {
+EnumsDeserializer::deserializeInlineKind(const CIRInlineKind &pKind) {
   switch (pKind) {
     case protocir::CIRInlineKind::InlineKind_NoInline:
       return ::cir::InlineKind::NoInline;
@@ -397,7 +397,7 @@ EnumDeserializer::deserializeInlineKind(CIRInlineKind &pKind) {
 }
 
 ::cir::MemOrder
-EnumDeserializer::deserializeMemOrder(CIRMemOrder &pKind) {
+EnumsDeserializer::deserializeMemOrder(const CIRMemOrder &pKind) {
   switch (pKind) {
     case protocir::CIRMemOrder::MemOrder_Relaxed:
       return ::cir::MemOrder::Relaxed;
@@ -423,7 +423,7 @@ EnumDeserializer::deserializeMemOrder(CIRMemOrder &pKind) {
 }
 
 ::cir::sob::SignedOverflowBehavior
-EnumDeserializer::deserializeSignedOverflowBehavior(CIRSignedOverflowBehavior &pKind) {
+EnumsDeserializer::deserializeSignedOverflowBehavior(const CIRSignedOverflowBehavior &pKind) {
   switch (pKind) {
     case protocir::CIRSignedOverflowBehavior::SignedOverflowBehavior_Undefined:
       return ::cir::sob::SignedOverflowBehavior::undefined;
@@ -440,7 +440,7 @@ EnumDeserializer::deserializeSignedOverflowBehavior(CIRSignedOverflowBehavior &p
 }
 
 ::cir::SizeInfoType
-EnumDeserializer::deserializeSizeInfoType(CIRSizeInfoType &pKind) {
+EnumsDeserializer::deserializeSizeInfoType(const CIRSizeInfoType &pKind) {
   switch (pKind) {
     case protocir::CIRSizeInfoType::SizeInfoType_Min:
       return ::cir::SizeInfoType::min;
@@ -454,7 +454,7 @@ EnumDeserializer::deserializeSizeInfoType(CIRSizeInfoType &pKind) {
 }
 
 ::cir::SourceLanguage
-EnumDeserializer::deserializeSourceLanguage(CIRSourceLanguage &pKind) {
+EnumsDeserializer::deserializeSourceLanguage(const CIRSourceLanguage &pKind) {
   switch (pKind) {
     case protocir::CIRSourceLanguage::SourceLanguage_C:
       return ::cir::SourceLanguage::C;
@@ -471,7 +471,7 @@ EnumDeserializer::deserializeSourceLanguage(CIRSourceLanguage &pKind) {
 }
 
 ::cir::TLS_Model
-EnumDeserializer::deserializeTLS_Model(CIRTLS_Model &pKind) {
+EnumsDeserializer::deserializeTLS_Model(const CIRTLS_Model &pKind) {
   switch (pKind) {
     case protocir::CIRTLS_Model::TLS_Model_GeneralDynamic:
       return ::cir::TLS_Model::GeneralDynamic;
@@ -491,7 +491,7 @@ EnumDeserializer::deserializeTLS_Model(CIRTLS_Model &pKind) {
 }
 
 ::cir::UnaryOpKind
-EnumDeserializer::deserializeUnaryOpKind(CIRUnaryOpKind &pKind) {
+EnumsDeserializer::deserializeUnaryOpKind(const CIRUnaryOpKind &pKind) {
   switch (pKind) {
     case protocir::CIRUnaryOpKind::UnaryOpKind_Inc:
       return ::cir::UnaryOpKind::Inc;
@@ -514,7 +514,7 @@ EnumDeserializer::deserializeUnaryOpKind(CIRUnaryOpKind &pKind) {
 }
 
 ::cir::VisibilityKind
-EnumDeserializer::deserializeVisibilityKind(CIRVisibilityKind &pKind) {
+EnumsDeserializer::deserializeVisibilityKind(const CIRVisibilityKind &pKind) {
   switch (pKind) {
     case protocir::CIRVisibilityKind::VisibilityKind_Default:
       return ::cir::VisibilityKind::Default;

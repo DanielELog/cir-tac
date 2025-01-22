@@ -5,99 +5,99 @@
 #include <clang/CIR/Dialect/IR/CIRDialect.h>
 
 namespace protocir {
-class EnumDeserializer {
+class EnumsDeserializer {
 public:
 // ATT or Intel
   static ::cir::AsmFlavor
-  deserializeAsmFlavor(CIRAsmFlavor &pKind);
+  deserializeAsmFlavor(const CIRAsmFlavor &pKind);
 
 // Binary opcode for atomic fetch operations
   static ::cir::AtomicFetchKind
-  deserializeAtomicFetchKind(CIRAtomicFetchKind &pKind);
+  deserializeAtomicFetchKind(const CIRAtomicFetchKind &pKind);
 
 // await kind
   static ::cir::AwaitKind
-  deserializeAwaitKind(CIRAwaitKind &pKind);
+  deserializeAwaitKind(const CIRAwaitKind &pKind);
 
 // binary operation (arith and logic) kind
   static ::cir::BinOpKind
-  deserializeBinOpKind(CIRBinOpKind &pKind);
+  deserializeBinOpKind(const CIRBinOpKind &pKind);
 
 // checked binary arithmetic operation kind
   static ::cir::BinOpOverflowKind
-  deserializeBinOpOverflowKind(CIRBinOpOverflowKind &pKind);
+  deserializeBinOpOverflowKind(const CIRBinOpOverflowKind &pKind);
 
 // calling convention
   static ::cir::CallingConv
-  deserializeCallingConv(CIRCallingConv &pKind);
+  deserializeCallingConv(const CIRCallingConv &pKind);
 
 // case kind
   static ::cir::CaseOpKind
-  deserializeCaseOpKind(CIRCaseOpKind &pKind);
+  deserializeCaseOpKind(const CIRCaseOpKind &pKind);
 
 // cast kind
   static ::cir::CastKind
-  deserializeCastKind(CIRCastKind &pKind);
+  deserializeCastKind(const CIRCastKind &pKind);
 
 // Designate limits for begin/end of catch param handling
   static ::cir::CatchParamKind
-  deserializeCatchParamKind(CIRCatchParamKind &pKind);
+  deserializeCatchParamKind(const CIRCatchParamKind &pKind);
 
 // compare operation kind
   static ::cir::CmpOpKind
-  deserializeCmpOpKind(CIRCmpOpKind &pKind);
+  deserializeCmpOpKind(const CIRCmpOpKind &pKind);
 
 // three-way comparison ordering kind
   static ::cir::CmpOrdering
-  deserializeCmpOrdering(CIRCmpOrdering &pKind);
+  deserializeCmpOrdering(const CIRCmpOrdering &pKind);
 
 // complex number binary operation kind
   static ::cir::ComplexBinOpKind
-  deserializeComplexBinOpKind(CIRComplexBinOpKind &pKind);
+  deserializeComplexBinOpKind(const CIRComplexBinOpKind &pKind);
 
 // complex multiplication and division implementation
   static ::cir::ComplexRangeKind
-  deserializeComplexRangeKind(CIRComplexRangeKind &pKind);
+  deserializeComplexRangeKind(const CIRComplexRangeKind &pKind);
 
 // dynamic cast kind
   static ::cir::DynamicCastKind
-  deserializeDynamicCastKind(CIRDynamicCastKind &pKind);
+  deserializeDynamicCastKind(const CIRDynamicCastKind &pKind);
 
 // Linkage type/kind
   static ::cir::GlobalLinkageKind
-  deserializeGlobalLinkageKind(CIRGlobalLinkageKind &pKind);
+  deserializeGlobalLinkageKind(const CIRGlobalLinkageKind &pKind);
 
 // inlineKind
   static ::cir::InlineKind
-  deserializeInlineKind(CIRInlineKind &pKind);
+  deserializeInlineKind(const CIRInlineKind &pKind);
 
 // Memory order according to C++11 memory model
   static ::cir::MemOrder
-  deserializeMemOrder(CIRMemOrder &pKind);
+  deserializeMemOrder(const CIRMemOrder &pKind);
 
 // the behavior for signed overflow
   static ::cir::sob::SignedOverflowBehavior
-  deserializeSignedOverflowBehavior(CIRSignedOverflowBehavior &pKind);
+  deserializeSignedOverflowBehavior(const CIRSignedOverflowBehavior &pKind);
 
 // size info type
   static ::cir::SizeInfoType
-  deserializeSizeInfoType(CIRSizeInfoType &pKind);
+  deserializeSizeInfoType(const CIRSizeInfoType &pKind);
 
 // Source language
   static ::cir::SourceLanguage
-  deserializeSourceLanguage(CIRSourceLanguage &pKind);
+  deserializeSourceLanguage(const CIRSourceLanguage &pKind);
 
 // TLS model
   static ::cir::TLS_Model
-  deserializeTLS_Model(CIRTLS_Model &pKind);
+  deserializeTLS_Model(const CIRTLS_Model &pKind);
 
 // unary operation kind
   static ::cir::UnaryOpKind
-  deserializeUnaryOpKind(CIRUnaryOpKind &pKind);
+  deserializeUnaryOpKind(const CIRUnaryOpKind &pKind);
 
 // C/C++ visibility
   static ::cir::VisibilityKind
-  deserializeVisibilityKind(CIRVisibilityKind &pKind);
+  deserializeVisibilityKind(const CIRVisibilityKind &pKind);
 
 
 };

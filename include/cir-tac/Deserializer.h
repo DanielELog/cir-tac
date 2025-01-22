@@ -78,7 +78,7 @@ private:
   static void deserializeGlobal(ModuleInfo &mInfo, 
                                 const CIRGlobal &pGlobal);
 
-  static mlir::Operation deserializeOp(ModuleInfo &mInfo,
+  static mlir::Operation deserializeOp(FunctionInfo &fInfo,
                                        const CIROp &pOp);
 
   static cir::FuncOp deserializeFuncOp(ModuleInfo &mInfo,
