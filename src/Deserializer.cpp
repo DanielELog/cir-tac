@@ -1,4 +1,5 @@
 #include "cir-tac/Deserializer.h"
+#include "cir-tac/EnumsDeserializer.h"
 
 #include <mlir/IR/Verifier.h>
 
@@ -212,9 +213,17 @@ void Deserializer::deserializeBlock(FunctionInfo &fInfo,
   
 }
 
-cir::FuncOp Deserializer::deserializeFuncOp(ModuleInfo &mInfo,
-                                            const CIRFuncOp &pFuncOp) {
-  
+mlir::Operation Deserializer::deserializeOp(FunctionInfo &fInfo,
+                                            const CIROp &pOp) {
+  switch (pOp.operation_case()) {
+    case CIROp::OperationCase::kFuncOp:
+      {
+        auto linkage = EnumsDeserializer::de
+      }
+      break;
+    default:
+      llvm_unreachable("NYI");
+  }
 }
 
 void Deserializer::deserializeFunc(ModuleInfo &mInfo,
