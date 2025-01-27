@@ -221,6 +221,14 @@ mlir::Operation *Deserializer::deserializeOp(FunctionInfo &fInfo,
   switch (pOp.operation_case()) {
     case CIROp::OperationCase::kFuncOp:
       return deserializeFuncOp(fInfo.owner, pOp.func_op());
+    case CIROp::OperationCase::kBrOp:
+      {
+        auto pBrOp = pOp.br_op();
+        mlir::OperationState state(builder.getUnknownLoc(),
+                         cir::BrOp::getOperationName());
+        std::vector<mlir::Value> vals;
+        cir::BrOp::build(builder, state, vals, nullptr);
+      }
     default:
       llvm_unreachable("NYI");
   }
@@ -236,7 +244,7 @@ cir::FuncOp Deserializer::deserializeFuncOp(ModuleInfo &mInfo,
     && "FunctionType is not an instance of cir::FuncType!");
   auto op = builder.create<cir::FuncOp>(builder.getUnknownLoc(), pFuncOp.sym_name(),
     mlir::cast<cir::FuncType>(type));
-
+    
   op.setSymName(pFuncOp.sym_name());
   auto linkage =
     EnumsDeserializer::deserializeGlobalLinkageKind(pFuncOp.linkage());
