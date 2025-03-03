@@ -11,6 +11,7 @@ using namespace protocir;
 MLIROp OpSerializer::serializeOperation(mlir::Operation &op) {
   MLIROp pOp;
   *pOp.mutable_location() = attributeSerializer.serializeMLIRLocation(op.getLoc());
+  *pOp.mutable_id() = opCache.getMLIROpID(&op);
 
   llvm::TypeSwitch<mlir::Operation *>(&op)
   .Case<cir::AbsOp>([this, &pOp](cir::AbsOp op) {
@@ -468,6 +469,10 @@ MLIROp OpSerializer::serializeOperation(mlir::Operation &op) {
   .Case<cir::StdFindOp>([this, &pOp](cir::StdFindOp op) {
     auto serialized = serializeStdFindOp(op);
     *pOp.mutable_std_find_op() = serialized;
+  })
+  .Case<cir::StdInitializerListOp>([this, &pOp](cir::StdInitializerListOp op) {
+    auto serialized = serializeStdInitializerListOp(op);
+    *pOp.mutable_std_initializer_list_op() = serialized;
   })
   .Case<cir::StoreOp>([this, &pOp](cir::StoreOp op) {
     auto serialized = serializeStoreOp(op);
@@ -2018,6 +2023,18 @@ CIRStdFindOp OpSerializer::serializeStdFindOp(cir::StdFindOp op) {
   *serialized.mutable_original_fn() = attributeSerializer.serializeMLIRFlatSymbolRefAttr(op.getOriginalFnAttr());
 
   *serialized.mutable_result() = typeCache.getMLIRTypeID(op.getResult().getType());
+
+  return serialized;
+}
+
+CIRStdInitializerListOp OpSerializer::serializeStdInitializerListOp(cir::StdInitializerListOp op) {
+  CIRStdInitializerListOp serialized;
+
+  *serialized.mutable_init_list() = serializeValue(op.getInitList());
+  for (auto v : op.getArgs()) {
+    auto protoV = serialized.add_args();
+    *protoV = serializeValue(v);
+  }
 
   return serialized;
 }

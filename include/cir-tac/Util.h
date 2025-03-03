@@ -1,6 +1,15 @@
 #pragma once
 
+#include "mlir/IR/Operation.h"
 #include "proto/setup.pb.h"
+#include "proto/type.pb.h"
+
+#include <clang/CIR/Dialect/Builder/CIRBaseBuilder.h>
+#include <clang/CIR/Dialect/IR/CIRDataLayout.h>
+
+#include <clang/CIR/Dialect/IR/CIRDialect.h>
+#include <clang/CIR/Dialect/IR/CIRTypes.h>
+#include <llvm/ADT/DenseMap.h>
 
 #include <llvm/ADT/APFloat.h>
 #include <llvm/ADT/APInt.h>
@@ -9,6 +18,7 @@
 #include <mlir/IR/Types.h>
 
 #include <string>
+#include <unordered_map>
 
 using namespace protocir;
 
@@ -66,6 +76,46 @@ private:
   llvm::DenseMap<mlir::Block *, MLIRBlockID> cache_;
 };
 
+using TypeIDCache = std::unordered_map<std::string, mlir::Type>;
+
+using SerializedTypeCache = std::unordered_map<std::string, MLIRType>;
+
+using BlockIDCache = llvm::DenseMap<uint64_t, mlir::Block *>;
+
+using GlobalOPIDCache = std::unordered_map<std::string, mlir::Operation *>;
+
+using OperationIDCache = std::unordered_map<uint64_t, mlir::Operation *>;
+
+using FunctionIDCache = std::unordered_map<std::string, cir::FuncOp *>;
+
+struct ModuleInfo {
+  SerializedTypeCache serTypes;
+  TypeIDCache types;
+  GlobalOPIDCache globals;
+  FunctionIDCache funcs;
+
+  mlir::MLIRContext &ctx;
+  cir::CIRBaseBuilderTy &builder;
+  cir::CIRDataLayout &dataLayout;
+  mlir::ModuleOp &module;
+
+  ModuleInfo(mlir::MLIRContext &ctx,
+             cir::CIRBaseBuilderTy &builder,
+             cir::CIRDataLayout &dataLayout,
+             mlir::ModuleOp &module) :
+             ctx(ctx), builder(builder), dataLayout(dataLayout),
+             module(module) {}
+};
+
+struct FunctionInfo {
+  BlockIDCache blocks;
+  OperationIDCache ops;
+
+  ModuleInfo &owner;
+
+  FunctionInfo(ModuleInfo &owner) : owner(owner) {}
+};
+
 inline std::string serializeAPInt(llvm::APInt i) {
   std::string result;
   llvm::raw_string_ostream stream(result);
@@ -73,11 +123,26 @@ inline std::string serializeAPInt(llvm::APInt i) {
   return result;
 }
 
-inline std::string serializeAPFloat(llvm::APFloat f) {
+inline llvm::APInt deserializeAPInt(mlir::Type innerType, std::string pI) {
+  return llvm::APInt(innerType.getIntOrFloatBitWidth(), pI, 10);
+}
+
+inline MLIRAPFloat serializeAPFloat(llvm::APFloat f) {
+  MLIRAPFloat protoF;
   std::string result;
   llvm::raw_string_ostream stream(result);
   f.print(stream);
-  return result;
+  *protoF.mutable_value() = result;
+  protoF.set_semantics(llvm::APFloatBase::SemanticsToEnum(f.getSemantics()));
+  return protoF;
+}
+
+inline llvm::APFloat deserializeAPFloat(MLIRAPFloat pF) {
+  std::string value = pF.value();
+  auto semanticsEnum =
+    static_cast<llvm::APFloatBase::Semantics>(pF.semantics());
+  auto &semantics = llvm::APFloatBase::EnumToSemantics(semanticsEnum);
+  return llvm::APFloat(semantics, value);
 }
 
 inline std::string serializeStringRef(llvm::StringRef r) { return r.str(); }

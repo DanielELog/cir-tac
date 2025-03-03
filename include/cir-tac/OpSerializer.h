@@ -15,10 +15,13 @@ using namespace protocir;
 
 class OpSerializer {
 public:
-  OpSerializer(MLIRModuleID moduleID, TypeCache &typeCache, OpCache &opCache,
+  OpSerializer(MLIRModuleID moduleID,
+               TypeCache &typeCache,
+               OpCache &opCache,
                BlockCache &blockCache)
-      : moduleID(moduleID), typeCache(typeCache), opCache(opCache),
-      blockCache(blockCache), attributeSerializer(moduleID, typeCache) {}
+  : moduleID(moduleID), typeCache(typeCache),
+    opCache(opCache), blockCache(blockCache),
+    attributeSerializer(moduleID, typeCache) {}
 
   MLIROp serializeOperation(mlir::Operation &op);
 
@@ -136,6 +139,7 @@ public:
   CIRStackRestoreOp serializeStackRestoreOp(cir::StackRestoreOp op);
   CIRStackSaveOp serializeStackSaveOp(cir::StackSaveOp op);
   CIRStdFindOp serializeStdFindOp(cir::StdFindOp op);
+  CIRStdInitializerListOp serializeStdInitializerListOp(cir::StdInitializerListOp op);
   CIRStoreOp serializeStoreOp(cir::StoreOp op);
   CIRSwitchFlatOp serializeSwitchFlatOp(cir::SwitchFlatOp op);
   CIRSwitchOp serializeSwitchOp(cir::SwitchOp op);

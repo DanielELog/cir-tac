@@ -12,108 +12,315 @@ using namespace protocir;
 
 MLIRType TypeSerializer::serializeMLIRType(mlir::Type type) {
   MLIRType pType;
-
   *pType.mutable_id() = typeCache.getMLIRTypeID(type);
-
   llvm::TypeSwitch<mlir::Type>(type)
-  .Case<mlir::NoneType>([this, &pType](mlir::NoneType type) {
-    auto serialized = serializeMLIRNoneType(type);
-    *pType.mutable_none_type() = serialized;
+  .Case<mlir::BFloat16Type>([&](mlir::BFloat16Type type) {
+    auto serialized = serializeMLIRBFloat16Type(type);
+    *pType.mutable_mlirb_float16_type() = serialized;
   })
-  .Case<mlir::IndexType>([this, &pType](mlir::IndexType type) {
+  .Case<mlir::ComplexType>([&](mlir::ComplexType type) {
+    auto serialized = serializeMLIRComplexType(type);
+    *pType.mutable_mlir_complex_type() = serialized;
+  })
+  .Case<mlir::Float4E2M1FNType>([&](mlir::Float4E2M1FNType type) {
+    auto serialized = serializeMLIRFloat4E2M1FNType(type);
+    *pType.mutable_mlir_float4_e2_m1_fn_type() = serialized;
+  })
+  .Case<mlir::Float6E2M3FNType>([&](mlir::Float6E2M3FNType type) {
+    auto serialized = serializeMLIRFloat6E2M3FNType(type);
+    *pType.mutable_mlir_float6_e2_m3_fn_type() = serialized;
+  })
+  .Case<mlir::Float6E3M2FNType>([&](mlir::Float6E3M2FNType type) {
+    auto serialized = serializeMLIRFloat6E3M2FNType(type);
+    *pType.mutable_mlir_float6_e3_m2_fn_type() = serialized;
+  })
+  .Case<mlir::Float8E3M4Type>([&](mlir::Float8E3M4Type type) {
+    auto serialized = serializeMLIRFloat8E3M4Type(type);
+    *pType.mutable_mlir_float8_e3_m4_type() = serialized;
+  })
+  .Case<mlir::Float8E4M3Type>([&](mlir::Float8E4M3Type type) {
+    auto serialized = serializeMLIRFloat8E4M3Type(type);
+    *pType.mutable_mlir_float8_e4_m3_type() = serialized;
+  })
+  .Case<mlir::Float8E4M3B11FNUZType>([&](mlir::Float8E4M3B11FNUZType type) {
+    auto serialized = serializeMLIRFloat8E4M3B11FNUZType(type);
+    *pType.mutable_mlir_float8_e4_m3_b11_fnuz_type() = serialized;
+  })
+  .Case<mlir::Float8E4M3FNType>([&](mlir::Float8E4M3FNType type) {
+    auto serialized = serializeMLIRFloat8E4M3FNType(type);
+    *pType.mutable_mlir_float8_e4_m3_fn_type() = serialized;
+  })
+  .Case<mlir::Float8E4M3FNUZType>([&](mlir::Float8E4M3FNUZType type) {
+    auto serialized = serializeMLIRFloat8E4M3FNUZType(type);
+    *pType.mutable_mlir_float8_e4_m3_fnuz_type() = serialized;
+  })
+  .Case<mlir::Float8E5M2Type>([&](mlir::Float8E5M2Type type) {
+    auto serialized = serializeMLIRFloat8E5M2Type(type);
+    *pType.mutable_mlir_float8_e5_m2_type() = serialized;
+  })
+  .Case<mlir::Float8E5M2FNUZType>([&](mlir::Float8E5M2FNUZType type) {
+    auto serialized = serializeMLIRFloat8E5M2FNUZType(type);
+    *pType.mutable_mlir_float8_e5_m2_fnuz_type() = serialized;
+  })
+  .Case<mlir::Float8E8M0FNUType>([&](mlir::Float8E8M0FNUType type) {
+    auto serialized = serializeMLIRFloat8E8M0FNUType(type);
+    *pType.mutable_mlir_float8_e8_m0_fnu_type() = serialized;
+  })
+  .Case<mlir::Float16Type>([&](mlir::Float16Type type) {
+    auto serialized = serializeMLIRFloat16Type(type);
+    *pType.mutable_mlir_float16_type() = serialized;
+  })
+  .Case<mlir::Float32Type>([&](mlir::Float32Type type) {
+    auto serialized = serializeMLIRFloat32Type(type);
+    *pType.mutable_mlir_float32_type() = serialized;
+  })
+  .Case<mlir::Float64Type>([&](mlir::Float64Type type) {
+    auto serialized = serializeMLIRFloat64Type(type);
+    *pType.mutable_mlir_float64_type() = serialized;
+  })
+  .Case<mlir::Float80Type>([&](mlir::Float80Type type) {
+    auto serialized = serializeMLIRFloat80Type(type);
+    *pType.mutable_mlir_float80_type() = serialized;
+  })
+  .Case<mlir::Float128Type>([&](mlir::Float128Type type) {
+    auto serialized = serializeMLIRFloat128Type(type);
+    *pType.mutable_mlir_float128_type() = serialized;
+  })
+  .Case<mlir::FloatTF32Type>([&](mlir::FloatTF32Type type) {
+    auto serialized = serializeMLIRFloatTF32Type(type);
+    *pType.mutable_mlir_float_tf32_type() = serialized;
+  })
+  .Case<mlir::FunctionType>([&](mlir::FunctionType type) {
+    auto serialized = serializeMLIRFunctionType(type);
+    *pType.mutable_mlir_function_type() = serialized;
+  })
+  .Case<mlir::IndexType>([&](mlir::IndexType type) {
     auto serialized = serializeMLIRIndexType(type);
-    *pType.mutable_index_type() = serialized;
+    *pType.mutable_mlir_index_type() = serialized;
   })
-  .Case<mlir::IntegerType>([this, &pType](mlir::IntegerType type) {
+  .Case<mlir::IntegerType>([&](mlir::IntegerType type) {
     auto serialized = serializeMLIRIntegerType(type);
-    *pType.mutable_integer_type() = serialized;
+    *pType.mutable_mlir_integer_type() = serialized;
   })
-  .Case<cir::ArrayType>([this, &pType](cir::ArrayType type) {
+  .Case<mlir::MemRefType>([&](mlir::MemRefType type) {
+    auto serialized = serializeMLIRMemRefType(type);
+    *pType.mutable_mlir_mem_ref_type() = serialized;
+  })
+  .Case<mlir::NoneType>([&](mlir::NoneType type) {
+    auto serialized = serializeMLIRNoneType(type);
+    *pType.mutable_mlir_none_type() = serialized;
+  })
+  .Case<mlir::OpaqueType>([&](mlir::OpaqueType type) {
+    auto serialized = serializeMLIROpaqueType(type);
+    *pType.mutable_mlir_opaque_type() = serialized;
+  })
+  .Case<mlir::RankedTensorType>([&](mlir::RankedTensorType type) {
+    auto serialized = serializeMLIRRankedTensorType(type);
+    *pType.mutable_mlir_ranked_tensor_type() = serialized;
+  })
+  .Case<mlir::TupleType>([&](mlir::TupleType type) {
+    auto serialized = serializeMLIRTupleType(type);
+    *pType.mutable_mlir_tuple_type() = serialized;
+  })
+  .Case<mlir::UnrankedMemRefType>([&](mlir::UnrankedMemRefType type) {
+    auto serialized = serializeMLIRUnrankedMemRefType(type);
+    *pType.mutable_mlir_unranked_mem_ref_type() = serialized;
+  })
+  .Case<mlir::UnrankedTensorType>([&](mlir::UnrankedTensorType type) {
+    auto serialized = serializeMLIRUnrankedTensorType(type);
+    *pType.mutable_mlir_unranked_tensor_type() = serialized;
+  })
+  .Case<mlir::VectorType>([&](mlir::VectorType type) {
+    auto serialized = serializeMLIRVectorType(type);
+    *pType.mutable_mlir_vector_type() = serialized;
+  })
+  .Case<cir::ArrayType>([&](cir::ArrayType type) {
     auto serialized = serializeCIRArrayType(type);
-    *pType.mutable_array_type() = serialized;
+    *pType.mutable_cir_array_type() = serialized;
   })
-  .Case<cir::BF16Type>([this, &pType](cir::BF16Type type) {
+  .Case<cir::BF16Type>([&](cir::BF16Type type) {
     auto serialized = serializeCIRBFloat16Type(type);
-    *pType.mutable_b_float16_type() = serialized;
+    *pType.mutable_cirb_float16_type() = serialized;
   })
-  .Case<cir::BoolType>([this, &pType](cir::BoolType type) {
+  .Case<cir::BoolType>([&](cir::BoolType type) {
     auto serialized = serializeCIRBoolType(type);
-    *pType.mutable_bool_type() = serialized;
+    *pType.mutable_cir_bool_type() = serialized;
   })
-  .Case<cir::ComplexType>([this, &pType](cir::ComplexType type) {
+  .Case<cir::ComplexType>([&](cir::ComplexType type) {
     auto serialized = serializeCIRComplexType(type);
-    *pType.mutable_complex_type() = serialized;
+    *pType.mutable_cir_complex_type() = serialized;
   })
-  .Case<cir::DataMemberType>([this, &pType](cir::DataMemberType type) {
+  .Case<cir::DataMemberType>([&](cir::DataMemberType type) {
     auto serialized = serializeCIRDataMemberType(type);
-    *pType.mutable_data_member_type() = serialized;
+    *pType.mutable_cir_data_member_type() = serialized;
   })
-  .Case<cir::DoubleType>([this, &pType](cir::DoubleType type) {
+  .Case<cir::DoubleType>([&](cir::DoubleType type) {
     auto serialized = serializeCIRDoubleType(type);
-    *pType.mutable_double_type() = serialized;
+    *pType.mutable_cir_double_type() = serialized;
   })
-  .Case<cir::ExceptionInfoType>([this, &pType](cir::ExceptionInfoType type) {
+  .Case<cir::ExceptionInfoType>([&](cir::ExceptionInfoType type) {
     auto serialized = serializeCIRExceptionType(type);
-    *pType.mutable_exception_type() = serialized;
+    *pType.mutable_cir_exception_type() = serialized;
   })
-  .Case<cir::FP16Type>([this, &pType](cir::FP16Type type) {
+  .Case<cir::FP16Type>([&](cir::FP16Type type) {
     auto serialized = serializeCIRFP16Type(type);
-    *pType.mutable_fp16_type() = serialized;
+    *pType.mutable_cirfp16_type() = serialized;
   })
-  .Case<cir::FP80Type>([this, &pType](cir::FP80Type type) {
+  .Case<cir::FP80Type>([&](cir::FP80Type type) {
     auto serialized = serializeCIRFP80Type(type);
-    *pType.mutable_fp80_type() = serialized;
+    *pType.mutable_cirfp80_type() = serialized;
   })
-  .Case<cir::FP128Type>([this, &pType](cir::FP128Type type) {
+  .Case<cir::FP128Type>([&](cir::FP128Type type) {
     auto serialized = serializeCIRFP128Type(type);
-    *pType.mutable_fp128_type() = serialized;
+    *pType.mutable_cirfp128_type() = serialized;
   })
-  .Case<cir::FuncType>([this, &pType](cir::FuncType type) {
+  .Case<cir::FuncType>([&](cir::FuncType type) {
     auto serialized = serializeCIRFuncType(type);
-    *pType.mutable_func_type() = serialized;
+    *pType.mutable_cir_func_type() = serialized;
   })
-  .Case<cir::IntType>([this, &pType](cir::IntType type) {
+  .Case<cir::IntType>([&](cir::IntType type) {
     auto serialized = serializeCIRIntType(type);
-    *pType.mutable_int_type() = serialized;
+    *pType.mutable_cir_int_type() = serialized;
   })
-  .Case<cir::LongDoubleType>([this, &pType](cir::LongDoubleType type) {
+  .Case<cir::LongDoubleType>([&](cir::LongDoubleType type) {
     auto serialized = serializeCIRLongDoubleType(type);
-    *pType.mutable_long_double_type() = serialized;
+    *pType.mutable_cir_long_double_type() = serialized;
   })
-  .Case<cir::MethodType>([this, &pType](cir::MethodType type) {
+  .Case<cir::MethodType>([&](cir::MethodType type) {
     auto serialized = serializeCIRMethodType(type);
-    *pType.mutable_method_type() = serialized;
+    *pType.mutable_cir_method_type() = serialized;
   })
-  .Case<cir::PointerType>([this, &pType](cir::PointerType type) {
+  .Case<cir::PointerType>([&](cir::PointerType type) {
     auto serialized = serializeCIRPointerType(type);
-    *pType.mutable_pointer_type() = serialized;
+    *pType.mutable_cir_pointer_type() = serialized;
   })
-  .Case<cir::SingleType>([this, &pType](cir::SingleType type) {
+  .Case<cir::SingleType>([&](cir::SingleType type) {
     auto serialized = serializeCIRSingleType(type);
-    *pType.mutable_single_type() = serialized;
+    *pType.mutable_cir_single_type() = serialized;
   })
-  .Case<cir::VectorType>([this, &pType](cir::VectorType type) {
+  .Case<cir::VectorType>([&](cir::VectorType type) {
     auto serialized = serializeCIRVectorType(type);
-    *pType.mutable_vector_type() = serialized;
+    *pType.mutable_cir_vector_type() = serialized;
   })
-  .Case<cir::VoidType>([this, &pType](cir::VoidType type) {
+  .Case<cir::VoidType>([&](cir::VoidType type) {
     auto serialized = serializeCIRVoidType(type);
-    *pType.mutable_void_type() = serialized;
+    *pType.mutable_cir_void_type() = serialized;
   })
-  .Case<cir::StructType>([this, &pType](cir::StructType type) {
+  .Case<cir::StructType>([&](cir::StructType type) {
     auto serialized = serializeCIRStructType(type);
-    *pType.mutable_struct_type() = serialized;
+    *pType.mutable_cir_struct_type() = serialized;
   })
   .Default([](mlir::Type type) {
     type.dump();
     llvm_unreachable("unknown type during serialization");
   });
-
   return pType;
 }
 
-MLIRNoneType TypeSerializer::serializeMLIRNoneType(mlir::NoneType type) {
-  MLIRNoneType serialized;
+MLIRBFloat16Type TypeSerializer::serializeMLIRBFloat16Type(mlir::BFloat16Type type) {
+  MLIRBFloat16Type serialized;
+  return serialized;
+}
+
+MLIRComplexType TypeSerializer::serializeMLIRComplexType(mlir::ComplexType type) {
+  MLIRComplexType serialized;
+  *serialized.mutable_element_type() = typeCache.getMLIRTypeID(type.getElementType());
+  return serialized;
+}
+
+MLIRFloat4E2M1FNType TypeSerializer::serializeMLIRFloat4E2M1FNType(mlir::Float4E2M1FNType type) {
+  MLIRFloat4E2M1FNType serialized;
+  return serialized;
+}
+
+MLIRFloat6E2M3FNType TypeSerializer::serializeMLIRFloat6E2M3FNType(mlir::Float6E2M3FNType type) {
+  MLIRFloat6E2M3FNType serialized;
+  return serialized;
+}
+
+MLIRFloat6E3M2FNType TypeSerializer::serializeMLIRFloat6E3M2FNType(mlir::Float6E3M2FNType type) {
+  MLIRFloat6E3M2FNType serialized;
+  return serialized;
+}
+
+MLIRFloat8E3M4Type TypeSerializer::serializeMLIRFloat8E3M4Type(mlir::Float8E3M4Type type) {
+  MLIRFloat8E3M4Type serialized;
+  return serialized;
+}
+
+MLIRFloat8E4M3Type TypeSerializer::serializeMLIRFloat8E4M3Type(mlir::Float8E4M3Type type) {
+  MLIRFloat8E4M3Type serialized;
+  return serialized;
+}
+
+MLIRFloat8E4M3B11FNUZType TypeSerializer::serializeMLIRFloat8E4M3B11FNUZType(mlir::Float8E4M3B11FNUZType type) {
+  MLIRFloat8E4M3B11FNUZType serialized;
+  return serialized;
+}
+
+MLIRFloat8E4M3FNType TypeSerializer::serializeMLIRFloat8E4M3FNType(mlir::Float8E4M3FNType type) {
+  MLIRFloat8E4M3FNType serialized;
+  return serialized;
+}
+
+MLIRFloat8E4M3FNUZType TypeSerializer::serializeMLIRFloat8E4M3FNUZType(mlir::Float8E4M3FNUZType type) {
+  MLIRFloat8E4M3FNUZType serialized;
+  return serialized;
+}
+
+MLIRFloat8E5M2Type TypeSerializer::serializeMLIRFloat8E5M2Type(mlir::Float8E5M2Type type) {
+  MLIRFloat8E5M2Type serialized;
+  return serialized;
+}
+
+MLIRFloat8E5M2FNUZType TypeSerializer::serializeMLIRFloat8E5M2FNUZType(mlir::Float8E5M2FNUZType type) {
+  MLIRFloat8E5M2FNUZType serialized;
+  return serialized;
+}
+
+MLIRFloat8E8M0FNUType TypeSerializer::serializeMLIRFloat8E8M0FNUType(mlir::Float8E8M0FNUType type) {
+  MLIRFloat8E8M0FNUType serialized;
+  return serialized;
+}
+
+MLIRFloat16Type TypeSerializer::serializeMLIRFloat16Type(mlir::Float16Type type) {
+  MLIRFloat16Type serialized;
+  return serialized;
+}
+
+MLIRFloat32Type TypeSerializer::serializeMLIRFloat32Type(mlir::Float32Type type) {
+  MLIRFloat32Type serialized;
+  return serialized;
+}
+
+MLIRFloat64Type TypeSerializer::serializeMLIRFloat64Type(mlir::Float64Type type) {
+  MLIRFloat64Type serialized;
+  return serialized;
+}
+
+MLIRFloat80Type TypeSerializer::serializeMLIRFloat80Type(mlir::Float80Type type) {
+  MLIRFloat80Type serialized;
+  return serialized;
+}
+
+MLIRFloat128Type TypeSerializer::serializeMLIRFloat128Type(mlir::Float128Type type) {
+  MLIRFloat128Type serialized;
+  return serialized;
+}
+
+MLIRFloatTF32Type TypeSerializer::serializeMLIRFloatTF32Type(mlir::FloatTF32Type type) {
+  MLIRFloatTF32Type serialized;
+  return serialized;
+}
+
+MLIRFunctionType TypeSerializer::serializeMLIRFunctionType(mlir::FunctionType type) {
+  MLIRFunctionType serialized;
+  for (auto i : type.getInputs()) {
+    serialized.mutable_inputs()->Add(typeCache.getMLIRTypeID(i));
+  }
+  for (auto i : type.getResults()) {
+    serialized.mutable_results()->Add(typeCache.getMLIRTypeID(i));
+  }
   return serialized;
 }
 
@@ -125,7 +332,73 @@ MLIRIndexType TypeSerializer::serializeMLIRIndexType(mlir::IndexType type) {
 MLIRIntegerType TypeSerializer::serializeMLIRIntegerType(mlir::IntegerType type) {
   MLIRIntegerType serialized;
   serialized.set_width(type.getWidth());
-  serialized.set_signed_(type.isSigned());
+  serialized.set_signedness(serializeMLIRSignednessSemantics(type.getSignedness()));
+  return serialized;
+}
+
+MLIRMemRefType TypeSerializer::serializeMLIRMemRefType(mlir::MemRefType type) {
+  MLIRMemRefType serialized;
+  for (auto i : type.getShape()) {
+    serialized.mutable_shape()->Add(i);
+  }
+  *serialized.mutable_element_type() = typeCache.getMLIRTypeID(type.getElementType());
+  *serialized.mutable_layout() = attributeSerializer.serializeMLIRAttribute(type.getLayout());
+  *serialized.mutable_memory_space() = attributeSerializer.serializeMLIRAttribute(type.getMemorySpace());
+  return serialized;
+}
+
+MLIRNoneType TypeSerializer::serializeMLIRNoneType(mlir::NoneType type) {
+  MLIRNoneType serialized;
+  return serialized;
+}
+
+MLIROpaqueType TypeSerializer::serializeMLIROpaqueType(mlir::OpaqueType type) {
+  MLIROpaqueType serialized;
+  *serialized.mutable_dialect_namespace() = attributeSerializer.serializeMLIRStringAttr(type.getDialectNamespace());
+  *serialized.mutable_type_data() = serializeStringRef(type.getTypeData());
+  return serialized;
+}
+
+MLIRRankedTensorType TypeSerializer::serializeMLIRRankedTensorType(mlir::RankedTensorType type) {
+  MLIRRankedTensorType serialized;
+  for (auto i : type.getShape()) {
+    serialized.mutable_shape()->Add(i);
+  }
+  *serialized.mutable_element_type() = typeCache.getMLIRTypeID(type.getElementType());
+  *serialized.mutable_encoding() = attributeSerializer.serializeMLIRAttribute(type.getEncoding());
+  return serialized;
+}
+
+MLIRTupleType TypeSerializer::serializeMLIRTupleType(mlir::TupleType type) {
+  MLIRTupleType serialized;
+  for (auto i : type.getTypes()) {
+    serialized.mutable_types()->Add(typeCache.getMLIRTypeID(i));
+  }
+  return serialized;
+}
+
+MLIRUnrankedMemRefType TypeSerializer::serializeMLIRUnrankedMemRefType(mlir::UnrankedMemRefType type) {
+  MLIRUnrankedMemRefType serialized;
+  *serialized.mutable_element_type() = typeCache.getMLIRTypeID(type.getElementType());
+  *serialized.mutable_memory_space() = attributeSerializer.serializeMLIRAttribute(type.getMemorySpace());
+  return serialized;
+}
+
+MLIRUnrankedTensorType TypeSerializer::serializeMLIRUnrankedTensorType(mlir::UnrankedTensorType type) {
+  MLIRUnrankedTensorType serialized;
+  *serialized.mutable_element_type() = typeCache.getMLIRTypeID(type.getElementType());
+  return serialized;
+}
+
+MLIRVectorType TypeSerializer::serializeMLIRVectorType(mlir::VectorType type) {
+  MLIRVectorType serialized;
+  for (auto i : type.getShape()) {
+    serialized.mutable_shape()->Add(i);
+  }
+  *serialized.mutable_element_type() = typeCache.getMLIRTypeID(type.getElementType());
+  for (auto i : type.getScalableDims()) {
+    serialized.mutable_scalable_dims()->Add(i);
+  }
   return serialized;
 }
 
@@ -241,15 +514,16 @@ CIRVoidType TypeSerializer::serializeCIRVoidType(cir::VoidType type) {
 }
 
 CIRStructType TypeSerializer::serializeCIRStructType(cir::StructType type) {
- CIRStructType serialized;
- for (auto i : type.getMembers()) {
-   serialized.mutable_members()->Add(typeCache.getMLIRTypeID(i));
- }
- *serialized.mutable_name() = attributeSerializer.serializeMLIRStringAttr(type.getName());
- serialized.set_incomplete(type.getIncomplete());
- serialized.set_packed(type.getPacked());
- serialized.set_kind(serializeCIRRecordKind(type.getKind()));
- return serialized;
+  CIRStructType serialized;
+  for (auto i : type.getMembers()) {
+    serialized.mutable_members()->Add(typeCache.getMLIRTypeID(i));
+  }
+  *serialized.mutable_name() = attributeSerializer.serializeMLIRStringAttr(type.getName());
+  serialized.set_incomplete(type.getIncomplete());
+  serialized.set_packed(type.getPacked());
+  serialized.set_kind(serializeCIRRecordKind(type.getKind()));
+  return serialized;
 }
+
 
 // clang-format on

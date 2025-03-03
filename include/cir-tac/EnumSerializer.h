@@ -7,6 +7,7 @@
 
 #include <clang/CIR/Dialect/IR/CIROpsEnums.h>
 #include <clang/CIR/Dialect/IR/CIRTypes.h>
+#include <mlir/IR/BuiltinTypes.h>
 
 using namespace protocir;
 
@@ -34,5 +35,6 @@ CIRTLSModel serializeCIRTLSModel(cir::TLS_Model);
 CIRUnaryOpKind serializeCIRUnaryOpKind(cir::UnaryOpKind);
 CIRVisibilityKind serializeCIRVisibilityKind(cir::VisibilityKind);
 CIRRecordKind serializeCIRRecordKind(cir::StructType::RecordKind);
+MLIRSignednessSemantics serializeMLIRSignednessSemantics(mlir::IntegerType::SignednessSemantics);
 
 // clang-format on

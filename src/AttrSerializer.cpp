@@ -21,6 +21,10 @@ MLIRAttribute AttributeSerializer::serializeMLIRAttribute(mlir::Attribute attr) 
     auto serialized = serializeMLIRDictionaryAttr(attr);
     *pAttr.mutable_dictionary_attr() = serialized;
   })
+  .Case<mlir::FloatAttr>([this, &pAttr](mlir::FloatAttr attr) {
+    auto serialized = serializeMLIRFloatAttr(attr);
+    *pAttr.mutable_float_attr() = serialized;
+  })
   .Case<mlir::IntegerAttr>([this, &pAttr](mlir::IntegerAttr attr) {
     auto serialized = serializeMLIRIntegerAttr(attr);
     *pAttr.mutable_integer_attr() = serialized;
@@ -33,9 +37,17 @@ MLIRAttribute AttributeSerializer::serializeMLIRAttribute(mlir::Attribute attr) 
     auto serialized = serializeMLIRTypeAttr(attr);
     *pAttr.mutable_type_attr() = serialized;
   })
+  .Case<mlir::UnitAttr>([this, &pAttr](mlir::UnitAttr attr) {
+    auto serialized = serializeMLIRUnitAttr(attr);
+    *pAttr.mutable_unit_attr() = serialized;
+  })
   .Case<mlir::FlatSymbolRefAttr>([this, &pAttr](mlir::FlatSymbolRefAttr attr) {
     auto serialized = serializeMLIRFlatSymbolRefAttr(attr);
     *pAttr.mutable_flat_symbol_ref_attr() = serialized;
+  })
+  .Case<mlir::LocationAttr>([this, &pAttr](mlir::LocationAttr attr) {
+    auto serialized = serializeMLIRLocation(attr);
+    *pAttr.mutable_location() = serialized;
   })
   .Case<cir::AddressSpaceAttr>([this, &pAttr](cir::AddressSpaceAttr attr) {
     auto serialized = serializeCIRAddressSpaceAttr(attr);
@@ -56,6 +68,14 @@ MLIRAttribute AttributeSerializer::serializeMLIRAttribute(mlir::Attribute attr) 
   .Case<cir::TBAAAttr>([this, &pAttr](cir::TBAAAttr attr) {
     auto serialized = serializeCIRTBAAAttr(attr);
     *pAttr.mutable_tbaa_attr() = serialized;
+  })
+  .Case<cir::CatchAllAttr>([this, &pAttr](cir::CatchAllAttr attr) {
+    auto serialized = serializeCIRCatchAllAttr(attr);
+    *pAttr.mutable_catch_all_attr() = serialized;
+  })
+  .Case<cir::CatchUnwindAttr>([this, &pAttr](cir::CatchUnwindAttr attr) {
+    auto serialized = serializeCIRCatchUnwindAttr(attr);
+    *pAttr.mutable_catch_unwind_attr() = serialized;
   })
   .Case<cir::CmpThreeWayInfoAttr>([this, &pAttr](cir::CmpThreeWayInfoAttr attr) {
     auto serialized = serializeCIRCmpThreeWayInfoAttr(attr);
@@ -188,6 +208,98 @@ MLIRAttribute AttributeSerializer::serializeMLIRAttribute(mlir::Attribute attr) 
   .Case<cir::ZeroAttr>([this, &pAttr](cir::ZeroAttr attr) {
     auto serialized = serializeCIRZeroAttr(attr);
     *pAttr.mutable_zero_attr() = serialized;
+  })
+  .Case<cir::AsmFlavorAttr>([this, &pAttr](cir::AsmFlavorAttr attr) {
+    auto serialized = serializeCIRAsmFlavorAttr(attr);
+    *pAttr.mutable_asm_flavor_attr() = serialized;
+  })
+  .Case<cir::AtomicFetchKindAttr>([this, &pAttr](cir::AtomicFetchKindAttr attr) {
+    auto serialized = serializeCIRAtomicFetchKindAttr(attr);
+    *pAttr.mutable_atomic_fetch_kind_attr() = serialized;
+  })
+  .Case<cir::AwaitKindAttr>([this, &pAttr](cir::AwaitKindAttr attr) {
+    auto serialized = serializeCIRAwaitKindAttr(attr);
+    *pAttr.mutable_await_kind_attr() = serialized;
+  })
+  .Case<cir::BinOpKindAttr>([this, &pAttr](cir::BinOpKindAttr attr) {
+    auto serialized = serializeCIRBinOpKindAttr(attr);
+    *pAttr.mutable_bin_op_kind_attr() = serialized;
+  })
+  .Case<cir::BinOpOverflowKindAttr>([this, &pAttr](cir::BinOpOverflowKindAttr attr) {
+    auto serialized = serializeCIRBinOpOverflowKindAttr(attr);
+    *pAttr.mutable_bin_op_overflow_kind_attr() = serialized;
+  })
+  .Case<cir::CallingConvAttr>([this, &pAttr](cir::CallingConvAttr attr) {
+    auto serialized = serializeCIRCallingConvAttr(attr);
+    *pAttr.mutable_calling_conv_attr() = serialized;
+  })
+  .Case<cir::CaseOpKindAttr>([this, &pAttr](cir::CaseOpKindAttr attr) {
+    auto serialized = serializeCIRCaseOpKindAttr(attr);
+    *pAttr.mutable_case_op_kind_attr() = serialized;
+  })
+  .Case<cir::CastKindAttr>([this, &pAttr](cir::CastKindAttr attr) {
+    auto serialized = serializeCIRCastKindAttr(attr);
+    *pAttr.mutable_cast_kind_attr() = serialized;
+  })
+  .Case<cir::CatchParamKindAttr>([this, &pAttr](cir::CatchParamKindAttr attr) {
+    auto serialized = serializeCIRCatchParamKindAttr(attr);
+    *pAttr.mutable_catch_param_kind_attr() = serialized;
+  })
+  .Case<cir::CmpOpKindAttr>([this, &pAttr](cir::CmpOpKindAttr attr) {
+    auto serialized = serializeCIRCmpOpKindAttr(attr);
+    *pAttr.mutable_cmp_op_kind_attr() = serialized;
+  })
+  .Case<cir::CmpOrderingAttr>([this, &pAttr](cir::CmpOrderingAttr attr) {
+    auto serialized = serializeCIRCmpOrderingAttr(attr);
+    *pAttr.mutable_cmp_ordering_attr() = serialized;
+  })
+  .Case<cir::ComplexBinOpKindAttr>([this, &pAttr](cir::ComplexBinOpKindAttr attr) {
+    auto serialized = serializeCIRComplexBinOpKindAttr(attr);
+    *pAttr.mutable_complex_bin_op_kind_attr() = serialized;
+  })
+  .Case<cir::ComplexRangeKindAttr>([this, &pAttr](cir::ComplexRangeKindAttr attr) {
+    auto serialized = serializeCIRComplexRangeKindAttr(attr);
+    *pAttr.mutable_complex_range_kind_attr() = serialized;
+  })
+  .Case<cir::DynamicCastKindAttr>([this, &pAttr](cir::DynamicCastKindAttr attr) {
+    auto serialized = serializeCIRDynamicCastKindAttr(attr);
+    *pAttr.mutable_dynamic_cast_kind_attr() = serialized;
+  })
+  .Case<cir::GlobalLinkageKindAttr>([this, &pAttr](cir::GlobalLinkageKindAttr attr) {
+    auto serialized = serializeCIRGlobalLinkageKindAttr(attr);
+    *pAttr.mutable_global_linkage_kind_attr() = serialized;
+  })
+  .Case<cir::InlineKindAttr>([this, &pAttr](cir::InlineKindAttr attr) {
+    auto serialized = serializeCIRInlineKindAttr(attr);
+    *pAttr.mutable_inline_kind_attr() = serialized;
+  })
+  .Case<cir::MemOrderAttr>([this, &pAttr](cir::MemOrderAttr attr) {
+    auto serialized = serializeCIRMemOrderAttr(attr);
+    *pAttr.mutable_mem_order_attr() = serialized;
+  })
+  .Case<cir::SignedOverflowBehaviorAttr>([this, &pAttr](cir::SignedOverflowBehaviorAttr attr) {
+    auto serialized = serializeCIRSignedOverflowBehaviorAttr(attr);
+    *pAttr.mutable_signed_overflow_behavior_attr() = serialized;
+  })
+  .Case<cir::SizeInfoTypeAttr>([this, &pAttr](cir::SizeInfoTypeAttr attr) {
+    auto serialized = serializeCIRSizeInfoTypeAttr(attr);
+    *pAttr.mutable_size_info_type_attr() = serialized;
+  })
+  .Case<cir::SourceLanguageAttr>([this, &pAttr](cir::SourceLanguageAttr attr) {
+    auto serialized = serializeCIRSourceLanguageAttr(attr);
+    *pAttr.mutable_source_language_attr() = serialized;
+  })
+  .Case<cir::TLS_ModelAttr>([this, &pAttr](cir::TLS_ModelAttr attr) {
+    auto serialized = serializeCIRTLSModelAttr(attr);
+    *pAttr.mutable_tls_model_attr() = serialized;
+  })
+  .Case<cir::UnaryOpKindAttr>([this, &pAttr](cir::UnaryOpKindAttr attr) {
+    auto serialized = serializeCIRUnaryOpKindAttr(attr);
+    *pAttr.mutable_unary_op_kind_attr() = serialized;
+  })
+  .Case<cir::VisibilityKindAttr>([this, &pAttr](cir::VisibilityKindAttr attr) {
+    auto serialized = serializeCIRVisibilityKindAttr(attr);
+    *pAttr.mutable_visibility_kind_attr() = serialized;
   })
   .Default([](mlir::Attribute attr) {
     attr.dump();
@@ -385,6 +497,16 @@ CIRBoolAttr AttributeSerializer::serializeCIRBoolAttr(cir::BoolAttr attr) {
 
 CIRTBAAAttr AttributeSerializer::serializeCIRTBAAAttr(cir::TBAAAttr attr) {
   CIRTBAAAttr serialized;
+  return serialized;
+}
+
+CIRCatchAllAttr AttributeSerializer::serializeCIRCatchAllAttr(cir::CatchAllAttr attr) {
+  CIRCatchAllAttr serialized;
+  return serialized;
+}
+
+CIRCatchUnwindAttr AttributeSerializer::serializeCIRCatchUnwindAttr(cir::CatchUnwindAttr attr) {
+  CIRCatchUnwindAttr serialized;
   return serialized;
 }
 
@@ -660,6 +782,144 @@ CIRZeroAttr AttributeSerializer::serializeCIRZeroAttr(cir::ZeroAttr attr) {
   if (attr.getType()) {
     *serialized.mutable_type() = typeCache.getMLIRTypeID(attr.getType());
   }
+  return serialized;
+}
+
+CIRAsmFlavorAttr AttributeSerializer::serializeCIRAsmFlavorAttr(cir::AsmFlavorAttr attr) {
+  CIRAsmFlavorAttr serialized;
+  serialized.set_value(serializeCIRAsmFlavor(attr.getValue()));
+  return serialized;
+}
+
+CIRAtomicFetchKindAttr AttributeSerializer::serializeCIRAtomicFetchKindAttr(cir::AtomicFetchKindAttr attr) {
+  CIRAtomicFetchKindAttr serialized;
+  serialized.set_value(serializeCIRAtomicFetchKind(attr.getValue()));
+  return serialized;
+}
+
+CIRAwaitKindAttr AttributeSerializer::serializeCIRAwaitKindAttr(cir::AwaitKindAttr attr) {
+  CIRAwaitKindAttr serialized;
+  serialized.set_value(serializeCIRAwaitKind(attr.getValue()));
+  return serialized;
+}
+
+CIRBinOpKindAttr AttributeSerializer::serializeCIRBinOpKindAttr(cir::BinOpKindAttr attr) {
+  CIRBinOpKindAttr serialized;
+  serialized.set_value(serializeCIRBinOpKind(attr.getValue()));
+  return serialized;
+}
+
+CIRBinOpOverflowKindAttr AttributeSerializer::serializeCIRBinOpOverflowKindAttr(cir::BinOpOverflowKindAttr attr) {
+  CIRBinOpOverflowKindAttr serialized;
+  serialized.set_value(serializeCIRBinOpOverflowKind(attr.getValue()));
+  return serialized;
+}
+
+CIRCallingConvAttr AttributeSerializer::serializeCIRCallingConvAttr(cir::CallingConvAttr attr) {
+  CIRCallingConvAttr serialized;
+  serialized.set_value(serializeCIRCallingConv(attr.getValue()));
+  return serialized;
+}
+
+CIRCaseOpKindAttr AttributeSerializer::serializeCIRCaseOpKindAttr(cir::CaseOpKindAttr attr) {
+  CIRCaseOpKindAttr serialized;
+  serialized.set_value(serializeCIRCaseOpKind(attr.getValue()));
+  return serialized;
+}
+
+CIRCastKindAttr AttributeSerializer::serializeCIRCastKindAttr(cir::CastKindAttr attr) {
+  CIRCastKindAttr serialized;
+  serialized.set_value(serializeCIRCastKind(attr.getValue()));
+  return serialized;
+}
+
+CIRCatchParamKindAttr AttributeSerializer::serializeCIRCatchParamKindAttr(cir::CatchParamKindAttr attr) {
+  CIRCatchParamKindAttr serialized;
+  serialized.set_value(serializeCIRCatchParamKind(attr.getValue()));
+  return serialized;
+}
+
+CIRCmpOpKindAttr AttributeSerializer::serializeCIRCmpOpKindAttr(cir::CmpOpKindAttr attr) {
+  CIRCmpOpKindAttr serialized;
+  serialized.set_value(serializeCIRCmpOpKind(attr.getValue()));
+  return serialized;
+}
+
+CIRCmpOrderingAttr AttributeSerializer::serializeCIRCmpOrderingAttr(cir::CmpOrderingAttr attr) {
+  CIRCmpOrderingAttr serialized;
+  serialized.set_value(serializeCIRCmpOrdering(attr.getValue()));
+  return serialized;
+}
+
+CIRComplexBinOpKindAttr AttributeSerializer::serializeCIRComplexBinOpKindAttr(cir::ComplexBinOpKindAttr attr) {
+  CIRComplexBinOpKindAttr serialized;
+  serialized.set_value(serializeCIRComplexBinOpKind(attr.getValue()));
+  return serialized;
+}
+
+CIRComplexRangeKindAttr AttributeSerializer::serializeCIRComplexRangeKindAttr(cir::ComplexRangeKindAttr attr) {
+  CIRComplexRangeKindAttr serialized;
+  serialized.set_value(serializeCIRComplexRangeKind(attr.getValue()));
+  return serialized;
+}
+
+CIRDynamicCastKindAttr AttributeSerializer::serializeCIRDynamicCastKindAttr(cir::DynamicCastKindAttr attr) {
+  CIRDynamicCastKindAttr serialized;
+  serialized.set_value(serializeCIRDynamicCastKind(attr.getValue()));
+  return serialized;
+}
+
+CIRGlobalLinkageKindAttr AttributeSerializer::serializeCIRGlobalLinkageKindAttr(cir::GlobalLinkageKindAttr attr) {
+  CIRGlobalLinkageKindAttr serialized;
+  serialized.set_value(serializeCIRGlobalLinkageKind(attr.getValue()));
+  return serialized;
+}
+
+CIRInlineKindAttr AttributeSerializer::serializeCIRInlineKindAttr(cir::InlineKindAttr attr) {
+  CIRInlineKindAttr serialized;
+  serialized.set_value(serializeCIRInlineKind(attr.getValue()));
+  return serialized;
+}
+
+CIRMemOrderAttr AttributeSerializer::serializeCIRMemOrderAttr(cir::MemOrderAttr attr) {
+  CIRMemOrderAttr serialized;
+  serialized.set_value(serializeCIRMemOrder(attr.getValue()));
+  return serialized;
+}
+
+CIRSignedOverflowBehaviorAttr AttributeSerializer::serializeCIRSignedOverflowBehaviorAttr(cir::SignedOverflowBehaviorAttr attr) {
+  CIRSignedOverflowBehaviorAttr serialized;
+  serialized.set_value(serializeCIRSignedOverflowBehavior(attr.getBehavior()));
+  return serialized;
+}
+
+CIRSizeInfoTypeAttr AttributeSerializer::serializeCIRSizeInfoTypeAttr(cir::SizeInfoTypeAttr attr) {
+  CIRSizeInfoTypeAttr serialized;
+  serialized.set_value(serializeCIRSizeInfoType(attr.getValue()));
+  return serialized;
+}
+
+CIRSourceLanguageAttr AttributeSerializer::serializeCIRSourceLanguageAttr(cir::SourceLanguageAttr attr) {
+  CIRSourceLanguageAttr serialized;
+  serialized.set_value(serializeCIRSourceLanguage(attr.getValue()));
+  return serialized;
+}
+
+CIRTLSModelAttr AttributeSerializer::serializeCIRTLSModelAttr(cir::TLS_ModelAttr attr) {
+  CIRTLSModelAttr serialized;
+  serialized.set_value(serializeCIRTLSModel(attr.getValue()));
+  return serialized;
+}
+
+CIRUnaryOpKindAttr AttributeSerializer::serializeCIRUnaryOpKindAttr(cir::UnaryOpKindAttr attr) {
+  CIRUnaryOpKindAttr serialized;
+  serialized.set_value(serializeCIRUnaryOpKind(attr.getValue()));
+  return serialized;
+}
+
+CIRVisibilityKindAttr AttributeSerializer::serializeCIRVisibilityKindAttr(cir::VisibilityKindAttr attr) {
+  CIRVisibilityKindAttr serialized;
+  serialized.set_value(serializeCIRVisibilityKind(attr.getValue()));
   return serialized;
 }
 

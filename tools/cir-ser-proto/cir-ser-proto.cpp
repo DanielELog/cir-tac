@@ -9,7 +9,6 @@
 #include <llvm/ADT/TypeSwitch.h>
 #include <llvm/Support/Casting.h>
 #include <llvm/Support/ErrorHandling.h>
-#include <mlir/Dialect/DLTI/DLTIDialect.h.inc>
 #include <mlir/Dialect/LLVMIR/LLVMDialect.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/Dialect.h>

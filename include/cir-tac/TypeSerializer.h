@@ -9,47 +9,69 @@
 #include "proto/type.pb.h"
 
 #include <clang/CIR/Dialect/IR/CIRTypes.h>
+#include <mlir/IR/BuiltinTypes.h>
 #include <mlir/IR/Builders.h>
 
-using namespace protocir;
+namespace protocir {
 
 class TypeSerializer {
 public:
-  TypeSerializer(MLIRModuleID moduleID, TypeCache &typeCache)
-  : moduleID(moduleID), typeCache(typeCache), attributeSerializer(moduleID, typeCache) {
-  }
+  TypeSerializer(MLIRModuleID moduleID, TypeCache &typeCache) : moduleID(moduleID), typeCache(typeCache), attributeSerializer(moduleID, typeCache) {}
 
-  MLIRType serializeMLIRType(mlir::Type);
-
-  MLIRNoneType serializeMLIRNoneType(mlir::NoneType);
-  MLIRIndexType serializeMLIRIndexType(mlir::IndexType);
-  MLIRIntegerType serializeMLIRIntegerType(mlir::IntegerType);
-
-  CIRArrayType serializeCIRArrayType(cir::ArrayType);
-  CIRBFloat16Type serializeCIRBFloat16Type(cir::BF16Type);
-  CIRBoolType serializeCIRBoolType(cir::BoolType);
-  CIRComplexType serializeCIRComplexType(cir::ComplexType);
-  CIRDataMemberType serializeCIRDataMemberType(cir::DataMemberType);
-  CIRDoubleType serializeCIRDoubleType(cir::DoubleType);
-  CIRExceptionType serializeCIRExceptionType(cir::ExceptionInfoType);
-  CIRFP16Type serializeCIRFP16Type(cir::FP16Type);
-  CIRFP80Type serializeCIRFP80Type(cir::FP80Type);
-  CIRFP128Type serializeCIRFP128Type(cir::FP128Type);
-  CIRFuncType serializeCIRFuncType(cir::FuncType);
-  CIRIntType serializeCIRIntType(cir::IntType);
-  CIRLongDoubleType serializeCIRLongDoubleType(cir::LongDoubleType);
-  CIRMethodType serializeCIRMethodType(cir::MethodType);
-  CIRPointerType serializeCIRPointerType(cir::PointerType);
-  CIRSingleType serializeCIRSingleType(cir::SingleType);
-  CIRVectorType serializeCIRVectorType(cir::VectorType);
-  CIRVoidType serializeCIRVoidType(cir::VoidType);
-  CIRStructType serializeCIRStructType(cir::StructType);
-
+  MLIRType serializeMLIRType(mlir::Type type);
+  MLIRBFloat16Type serializeMLIRBFloat16Type(mlir::BFloat16Type type);
+  MLIRComplexType serializeMLIRComplexType(mlir::ComplexType type);
+  MLIRFloat4E2M1FNType serializeMLIRFloat4E2M1FNType(mlir::Float4E2M1FNType type);
+  MLIRFloat6E2M3FNType serializeMLIRFloat6E2M3FNType(mlir::Float6E2M3FNType type);
+  MLIRFloat6E3M2FNType serializeMLIRFloat6E3M2FNType(mlir::Float6E3M2FNType type);
+  MLIRFloat8E3M4Type serializeMLIRFloat8E3M4Type(mlir::Float8E3M4Type type);
+  MLIRFloat8E4M3Type serializeMLIRFloat8E4M3Type(mlir::Float8E4M3Type type);
+  MLIRFloat8E4M3B11FNUZType serializeMLIRFloat8E4M3B11FNUZType(mlir::Float8E4M3B11FNUZType type);
+  MLIRFloat8E4M3FNType serializeMLIRFloat8E4M3FNType(mlir::Float8E4M3FNType type);
+  MLIRFloat8E4M3FNUZType serializeMLIRFloat8E4M3FNUZType(mlir::Float8E4M3FNUZType type);
+  MLIRFloat8E5M2Type serializeMLIRFloat8E5M2Type(mlir::Float8E5M2Type type);
+  MLIRFloat8E5M2FNUZType serializeMLIRFloat8E5M2FNUZType(mlir::Float8E5M2FNUZType type);
+  MLIRFloat8E8M0FNUType serializeMLIRFloat8E8M0FNUType(mlir::Float8E8M0FNUType type);
+  MLIRFloat16Type serializeMLIRFloat16Type(mlir::Float16Type type);
+  MLIRFloat32Type serializeMLIRFloat32Type(mlir::Float32Type type);
+  MLIRFloat64Type serializeMLIRFloat64Type(mlir::Float64Type type);
+  MLIRFloat80Type serializeMLIRFloat80Type(mlir::Float80Type type);
+  MLIRFloat128Type serializeMLIRFloat128Type(mlir::Float128Type type);
+  MLIRFloatTF32Type serializeMLIRFloatTF32Type(mlir::FloatTF32Type type);
+  MLIRFunctionType serializeMLIRFunctionType(mlir::FunctionType type);
+  MLIRIndexType serializeMLIRIndexType(mlir::IndexType type);
+  MLIRIntegerType serializeMLIRIntegerType(mlir::IntegerType type);
+  MLIRMemRefType serializeMLIRMemRefType(mlir::MemRefType type);
+  MLIRNoneType serializeMLIRNoneType(mlir::NoneType type);
+  MLIROpaqueType serializeMLIROpaqueType(mlir::OpaqueType type);
+  MLIRRankedTensorType serializeMLIRRankedTensorType(mlir::RankedTensorType type);
+  MLIRTupleType serializeMLIRTupleType(mlir::TupleType type);
+  MLIRUnrankedMemRefType serializeMLIRUnrankedMemRefType(mlir::UnrankedMemRefType type);
+  MLIRUnrankedTensorType serializeMLIRUnrankedTensorType(mlir::UnrankedTensorType type);
+  MLIRVectorType serializeMLIRVectorType(mlir::VectorType type);
+  CIRArrayType serializeCIRArrayType(cir::ArrayType type);
+  CIRBFloat16Type serializeCIRBFloat16Type(cir::BF16Type type);
+  CIRBoolType serializeCIRBoolType(cir::BoolType type);
+  CIRComplexType serializeCIRComplexType(cir::ComplexType type);
+  CIRDataMemberType serializeCIRDataMemberType(cir::DataMemberType type);
+  CIRDoubleType serializeCIRDoubleType(cir::DoubleType type);
+  CIRExceptionType serializeCIRExceptionType(cir::ExceptionInfoType type);
+  CIRFP16Type serializeCIRFP16Type(cir::FP16Type type);
+  CIRFP80Type serializeCIRFP80Type(cir::FP80Type type);
+  CIRFP128Type serializeCIRFP128Type(cir::FP128Type type);
+  CIRFuncType serializeCIRFuncType(cir::FuncType type);
+  CIRIntType serializeCIRIntType(cir::IntType type);
+  CIRLongDoubleType serializeCIRLongDoubleType(cir::LongDoubleType type);
+  CIRMethodType serializeCIRMethodType(cir::MethodType type);
+  CIRPointerType serializeCIRPointerType(cir::PointerType type);
+  CIRSingleType serializeCIRSingleType(cir::SingleType type);
+  CIRVectorType serializeCIRVectorType(cir::VectorType type);
+  CIRVoidType serializeCIRVoidType(cir::VoidType type);
+  CIRStructType serializeCIRStructType(cir::StructType type);
 private:
   MLIRModuleID moduleID;
-  TypeCache &typeCache;
+  TypeCache & typeCache;
   AttributeSerializer attributeSerializer;
 };
-
-
+} // namespace protocir
 // clang-format on

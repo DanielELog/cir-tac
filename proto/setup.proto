@@ -45,3 +45,8 @@ message MLIRBlockArgument {
 message MLIRValueList { repeated MLIRValue list = 1; }
 
 message MLIRTypeIDList { repeated MLIRTypeID list = 1; }
+
+message MLIRAPFloat {
+  string value = 1;
+  int32 semantics = 2;
+}

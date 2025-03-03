@@ -9,6 +9,10 @@ add_library(protoSerializer
   TypeSerializer.cpp
   AttrSerializer.cpp
   OpSerializer.cpp
+  Deserializer.cpp
+  EnumDeserializer.cpp
+  AttrDeserializer.cpp
+  OpDeserializer.cpp
 )
 
 target_link_libraries(protoSerializer ${LIBS})
