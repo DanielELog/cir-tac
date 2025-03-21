@@ -95,8 +95,8 @@ static bool emitTypeProto(const RecordKeeper &records, llvm::raw_ostream &os) {
     for (auto param : type.getParameters()) {
       auto paramSnake = llvm::convertToSnakeFromCamelCase(param.getName());
       if (param.isOptional()) {
-        os << formatv("  optional {0} {1} = {2};\n", getProtoType(param), paramSnake,
-                      index++);
+        os << formatv("  optional {0} {1} = {2};\n", getProtoType(param),
+                      paramSnake, index++);
       } else {
         os << formatv("  {0} {1} = {2};\n", getProtoType(param), paramSnake,
                       index++);
@@ -121,8 +121,7 @@ static bool emitTypeProto(const RecordKeeper &records, llvm::raw_ostream &os) {
 }
 
 static bool emitTypeProtoSerializer(const RecordKeeper &records,
-                                    llvm::raw_ostream &os,
-                                    bool emitDecl) {
+                                    llvm::raw_ostream &os, bool emitDecl) {
   std::string defHeader = R"(
 #include "cir-tac/TypeSerializer.h"
 #include "cir-tac/EnumSerializer.h"
@@ -171,14 +170,16 @@ return serialized;
   auto defs = getDefs(records);
 
   CppProtoSerializer serClass("TypeSerializer", {"mlir::Type", "MLIRType"},
-    "type", declHeader, declHeaderClose, defHeader, "");
+                              "type", declHeader, declHeaderClose, defHeader,
+                              "");
 
   serClass.addField("MLIRModuleID", "moduleID");
   serClass.addField("TypeCache &", "typeCache");
   serClass.addField("AttributeSerializer", "attributeSerializer",
                     "moduleID, typeCache");
 
-  serClass.addPreCaseBody("*pType.mutable_id() = typeCache.getMLIRTypeID(type);\n");
+  serClass.addPreCaseBody(
+      "*pType.mutable_id() = typeCache.getMLIRTypeID(type);\n");
 
   for (auto &def : defs) {
     AttrOrTypeDef type(def);
@@ -205,8 +206,7 @@ static bool emitTypeProtoSerializerHeader(const RecordKeeper &records,
 }
 
 static bool emitTypeProtoDeserializer(const RecordKeeper &records,
-                                      llvm::raw_ostream &os,
-                                      bool emitDecl) {
+                                      llvm::raw_ostream &os, bool emitDecl) {
   std::string defHeader = R"(
 #include "cir-tac/TypeSerializer.h"
 #include "cir-tac/EnumSerializer.h"
@@ -248,27 +248,28 @@ return serialized;
 )";
 
   auto defs = getDefs(records);
-/*
-  CppProtoDeserializer deserClass("TypeDeserializer", "mlir::Type", "MLIRType",
-    "type", declHeader, declHeaderClose, defHeader, "");
+  /*
+    CppProtoDeserializer deserClass("TypeDeserializer", "mlir::Type",
+    "MLIRType", "type", declHeader, declHeaderClose, defHeader, "");
 
-  deserClass.addField("MLIRModuleID", "moduleID");
-  deserClass.addField("TypeCache &", "typeCache");
-  deserClass.addField("AttributeSerializer", "attributeSerializer",
-                      "moduleID, typeCache");
+    deserClass.addField("MLIRModuleID", "moduleID");
+    deserClass.addField("TypeCache &", "typeCache");
+    deserClass.addField("AttributeSerializer", "attributeSerializer",
+                        "moduleID, typeCache");
 
-  deserClass.addPreCaseBody("*pType.mutable_id() = typeCache.getMLIRTypeID(type);\n");
+    deserClass.addPreCaseBody("*pType.mutable_id() =
+    typeCache.getMLIRTypeID(type);\n");
 
-  for (auto &def : defs) {
-    AttrOrTypeDef type(def);
-    auto name = normalizeTypeName(type.getName());
-    auto serializer = serializeParameters(name, type.getParameters(), "type");
-    deserClass.addStandardCase(getCppType(type), name, serializer);
-  }
-  deserClass.addStandardCase("cir::StructType", "CIRStructType", structSer);
-*/
-//  generateCodeFile(deserClass, /*disableClang=*/true, /*addLicense=*/false,
-//                   emitDecl, os);
+    for (auto &def : defs) {
+      AttrOrTypeDef type(def);
+      auto name = normalizeTypeName(type.getName());
+      auto serializer = serializeParameters(name, type.getParameters(), "type");
+      deserClass.addStandardCase(getCppType(type), name, serializer);
+    }
+    deserClass.addStandardCase("cir::StructType", "CIRStructType", structSer);
+  */
+  //  generateCodeFile(deserClass, /*disableClang=*/true, /*addLicense=*/false,
+  //                   emitDecl, os);
 
   return false;
 }
@@ -342,16 +343,18 @@ static bool emitTypeKotlinBuilder(const RecordKeeper &records,
   for (auto &def : defs) {
     AttrOrTypeDef type(def);
     auto name = normalizeTypeName(type.getName());
-    auto snake =
-        llvm::convertToSnakeFromCamelCase(StringRef(name));
+    auto snake = llvm::convertToSnakeFromCamelCase(StringRef(name));
     auto lowerCamel = llvm::convertToCamelFromSnakeCase(snake, false);
     std::transform(snake.begin(), snake.end(), snake.begin(), ::toupper);
-    os << formatv("        Type.MLIRType.TypeCase.{0} -> build{1}(id, type.{2})\n", snake,
-                  name, lowerCamel);
+    os << formatv(
+        "        Type.MLIRType.TypeCase.{0} -> build{1}(id, type.{2})\n", snake,
+        name, lowerCamel);
   }
-  os << formatv("        Type.MLIRType.TypeCase.CIR_STRUCT_TYPE -> buildCIRStructType(id, "
+  os << formatv("        Type.MLIRType.TypeCase.CIR_STRUCT_TYPE -> "
+                "buildCIRStructType(id, "
                 "type.cirStructType)\n");
-  os << formatv("        Type.MLIRType.TypeCase.TYPE_NOT_SET -> throw Exception()\n");
+  os << formatv(
+      "        Type.MLIRType.TypeCase.TYPE_NOT_SET -> throw Exception()\n");
   os << formatv("    }\n");
   os << formatv("    return builtType\n");
   os << formatv("}\n");
@@ -361,12 +364,11 @@ static bool emitTypeKotlinBuilder(const RecordKeeper &records,
   for (auto &def : defs) {
     AttrOrTypeDef type(def);
     auto name = normalizeTypeName(type.getName());
-    os << formatv("fun build{0}(id: MLIRTypeID, type: Type.{0}) =\n",
-                  name);
+    os << formatv("fun build{0}(id: MLIRTypeID, type: Type.{0}) =\n", name);
     os << formatv("    {0}(\n", name);
     os << formatv("        id,\n");
     for (auto param : type.getParameters()) {
-        buildParameter(param, "type", os);
+      buildParameter(param, "type", os);
     }
     os << "    )\n";
     os << "\n";
@@ -386,27 +388,25 @@ static bool emitTypeKotlinBuilder(const RecordKeeper &records,
   return false;
 }
 
-static mlir::GenRegistration
-genTypeProto("gen-type-proto",
-             "Generate proto file for types",
-             &emitTypeProto);
+static mlir::GenRegistration genTypeProto("gen-type-proto",
+                                          "Generate proto file for types",
+                                          &emitTypeProto);
+
+static mlir::GenRegistration genTypeKotlin("gen-type-kotlin",
+                                           "Generate kotlin for types",
+                                           &emitTypeKotlin);
 
 static mlir::GenRegistration
-genTypeKotlin("gen-type-kotlin",
-              "Generate kotlin for types",
-              &emitTypeKotlin);
+    genTypeKotlinBuilder("gen-type-kotlin-builder",
+                         "Generate kotlin builder for types",
+                         &emitTypeKotlinBuilder);
 
 static mlir::GenRegistration
-genTypeKotlinBuilder("gen-type-kotlin-builder",
-                     "Generate kotlin builder for types",
-                     &emitTypeKotlinBuilder);
+    genTypeProtoSerializerSourceTest("gen-type-proto-serializer-source",
+                                     "Generate proto serializer .cpp for types",
+                                     &emitTypeProtoSerializerSource);
 
 static mlir::GenRegistration
-genTypeProtoSerializerSourceTest("gen-type-proto-serializer-source",
-                                 "Generate proto serializer .cpp for types",
-                                 &emitTypeProtoSerializerSource);
-
-static mlir::GenRegistration
-genTypeProtoSerializerHeaderTest("gen-type-proto-serializer-header",
-                                 "Generate proto serializer .h for types",
-                                 &emitTypeProtoSerializerHeader);
+    genTypeProtoSerializerHeaderTest("gen-type-proto-serializer-header",
+                                     "Generate proto serializer .h for types",
+                                     &emitTypeProtoSerializerHeader);

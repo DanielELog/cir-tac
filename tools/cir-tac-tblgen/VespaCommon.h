@@ -4,16 +4,16 @@
 
 #include <utility>
 
-#include <mlir/Support/IndentedOstream.h>
-#include <mlir/TableGen/Class.h>
 #include <llvm/ADT/ArrayRef.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringExtras.h>
+#include <mlir/Support/IndentedOstream.h>
+#include <mlir/TableGen/Class.h>
 
-#include <vector>
-#include <string>
 #include <iterator>
 #include <optional>
+#include <string>
+#include <vector>
 
 using mlir::raw_indented_ostream;
 using namespace mlir::tblgen;
@@ -100,8 +100,7 @@ protected:
       : funcName(funcName), className(className), resTy(ret),
         inputName(inputName), declHeader(declHedOpen, declHedClose),
         defHeader(defHedOpen, defHedClose), internalClass(className) {
-    serName =
-        convertToCamelFromSnakeCase(formatv("p_{0}", inputName).str());
+    serName = convertToCamelFromSnakeCase(formatv("p_{0}", inputName).str());
   }
 
 public:

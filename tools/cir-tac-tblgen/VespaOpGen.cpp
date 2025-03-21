@@ -8,14 +8,13 @@
 #include "mlir/TableGen/Successor.h"
 #include "llvm/ADT/StringExtras.h"
 #include "llvm/ADT/StringRef.h"
-#include "llvm/Support/FormatVariadic.h"
-#include "llvm/Support/raw_ostream.h"
-#include "llvm/TableGen/Record.h"
 #include "llvm/ADT/StringSet.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/FormatVariadic.h"
 #include "llvm/Support/Regex.h"
+#include "llvm/Support/raw_ostream.h"
 #include "llvm/TableGen/Error.h"
+#include "llvm/TableGen/Record.h"
 
 #include <cassert>
 #include <set>
@@ -173,11 +172,8 @@ static std::string fixPrefix(const std::string &name) {
 }
 
 static std::set<StringRef> brokenEnums = {
-  "CIRCallingConvAttr",
-  "CIRCatchParamKindAttr",
-  "CIRGlobalLinkageKindAttr",
-  "CIRTLS_ModelAttr",
-  "CIRMemOrderAttr",
+    "CIRCallingConvAttr", "CIRCatchParamKindAttr", "CIRGlobalLinkageKindAttr",
+    "CIRTLS_ModelAttr",   "CIRMemOrderAttr",
 };
 
 static bool isEnum(Attribute attr) {
@@ -212,17 +208,22 @@ static std::string normalizeName(StringRef name) {
   return name.str();
 }
 
-static void serializeValueField(StringRef name, ValueType type, llvm::raw_ostream &os) {
+static void serializeValueField(StringRef name, ValueType type,
+                                llvm::raw_ostream &os) {
   auto snake = llvm::convertToSnakeFromCamelCase(name);
   auto upperCamel = llvm::convertToCamelFromSnakeCase(name, true);
   switch (type) {
   case ValueType::REG: {
-    os << formatv("  *serialized.mutable_{0}() = serializeValue(op.get{1}());\n", snake, upperCamel);
+    os << formatv(
+        "  *serialized.mutable_{0}() = serializeValue(op.get{1}());\n", snake,
+        upperCamel);
     return;
   }
   case ValueType::OPT: {
     os << formatv("  if (op.get{0}()) {{\n", upperCamel);
-    os << formatv("    *serialized.mutable_{0}() = serializeValue(op.get{1}());\n", snake, upperCamel);
+    os << formatv(
+        "    *serialized.mutable_{0}() = serializeValue(op.get{1}());\n", snake,
+        upperCamel);
     os << formatv("  }\n");
     return;
   }
@@ -246,17 +247,22 @@ static void serializeValueField(StringRef name, ValueType type, llvm::raw_ostrea
   }
 }
 
-static void serializeResultField(StringRef name, ValueType type, llvm::raw_ostream &os) {
+static void serializeResultField(StringRef name, ValueType type,
+                                 llvm::raw_ostream &os) {
   auto snake = llvm::convertToSnakeFromCamelCase(name);
   auto upperCamel = llvm::convertToCamelFromSnakeCase(name, true);
   switch (type) {
   case ValueType::REG: {
-    os << formatv("  *serialized.mutable_{0}() = typeCache.getMLIRTypeID(op.get{1}().getType());\n", snake, upperCamel);
+    os << formatv("  *serialized.mutable_{0}() = "
+                  "typeCache.getMLIRTypeID(op.get{1}().getType());\n",
+                  snake, upperCamel);
     return;
   }
   case ValueType::OPT: {
     os << formatv("  if (op.get{0}()) {{\n", upperCamel);
-    os << formatv("    *serialized.mutable_{0}() = typeCache.getMLIRTypeID(op.get{1}().getType());\n", snake, upperCamel);
+    os << formatv("    *serialized.mutable_{0}() = "
+                  "typeCache.getMLIRTypeID(op.get{1}().getType());\n",
+                  snake, upperCamel);
     os << formatv("  }\n");
     return;
   }
@@ -321,8 +327,8 @@ static bool emitOpProto(const RecordKeeper &records, raw_ostream &os) {
         os << formatv(protoOpMessageField, "optional MLIRValue", operandName,
                       messageIdx++);
       } else if (operand.isVariadicOfVariadic()) {
-        os << formatv(protoOpMessageField, "repeated MLIRValueList", operandName,
-                      messageIdx++);
+        os << formatv(protoOpMessageField, "repeated MLIRValueList",
+                      operandName, messageIdx++);
       } else if (operand.isVariadic()) {
         os << formatv(protoOpMessageField, "repeated MLIRValue", operandName,
                       messageIdx++);
@@ -339,7 +345,7 @@ static bool emitOpProto(const RecordKeeper &records, raw_ostream &os) {
       const auto &attr = op.getAttribute(i).attr;
 
       const auto &attrName =
-        llvm::convertToSnakeFromCamelCase(op.getAttribute(i).name);
+          llvm::convertToSnakeFromCamelCase(op.getAttribute(i).name);
 
       auto protoType = getAttrProtoType(attr);
 
@@ -368,8 +374,8 @@ static bool emitOpProto(const RecordKeeper &records, raw_ostream &os) {
       const auto &successorName =
           llvm::convertToSnakeFromCamelCase(successor.name);
       if (successor.isVariadic()) {
-        os << formatv(protoOpMessageField, "repeated MLIRBlockID", successorName,
-                      messageIdx++);
+        os << formatv(protoOpMessageField, "repeated MLIRBlockID",
+                      successorName, messageIdx++);
       } else {
         os << formatv(protoOpMessageField, "MLIRBlockID", successorName,
                       messageIdx++);
@@ -386,8 +392,8 @@ static bool emitOpProto(const RecordKeeper &records, raw_ostream &os) {
         os << formatv(protoOpMessageField, "optional MLIRTypeID", resultName,
                       messageIdx++);
       } else if (result.isVariadicOfVariadic()) {
-        os << formatv(protoOpMessageField, "repeated MLIRTypeIDArray", resultName,
-                      messageIdx++);
+        os << formatv(protoOpMessageField, "repeated MLIRTypeIDArray",
+                      resultName, messageIdx++);
       } else if (result.isVariadic()) {
         os << formatv(protoOpMessageField, "repeated MLIRTypeID", resultName,
                       messageIdx++);
@@ -399,7 +405,8 @@ static bool emitOpProto(const RecordKeeper &records, raw_ostream &os) {
 
     if (op.getNumRegions() > 0) {
       os << "\n";
-      os << formatv("  // {0} regions are ignored for now\n", op.getNumRegions());
+      os << formatv("  // {0} regions are ignored for now\n",
+                    op.getNumRegions());
     }
 
     os << formatv("}\n");
@@ -487,7 +494,8 @@ static bool emitOpProtoSerializerSource(const RecordKeeper &records,
 
   os << "MLIROp OpSerializer::serializeOperation(mlir::Operation &op) {\n";
   os << "  MLIROp pOp;\n";
-  os << "  *pOp.mutable_location() = attributeSerializer.serializeMLIRLocation(op.getLoc());\n";
+  os << "  *pOp.mutable_location() = "
+        "attributeSerializer.serializeMLIRLocation(op.getLoc());\n";
   os << "  *pOp.mutable_id() = opCache.getMLIROpID(&op);\n";
   os << "\n";
   os << "  llvm::TypeSwitch<mlir::Operation *>(&op)\n";
@@ -497,7 +505,8 @@ static bool emitOpProtoSerializerSource(const RecordKeeper &records,
     auto name = normalizeName(op.getCppClassName());
     auto nameSnake = llvm::convertToSnakeFromCamelCase(name);
 
-    os << formatv("  .Case<cir::{0}>([this, &pOp](cir::{0} op) {{\n", op.getCppClassName());
+    os << formatv("  .Case<cir::{0}>([this, &pOp](cir::{0} op) {{\n",
+                  op.getCppClassName());
     os << formatv("    auto serialized = serialize{0}(op);\n", name);
     os << formatv("    *pOp.mutable_{0}() = serialized;\n", nameSnake);
     os << formatv("  })\n");
@@ -543,9 +552,10 @@ static bool emitOpProtoSerializerSource(const RecordKeeper &records,
       const auto &attr = op.getAttribute(i).attr;
 
       const auto &attrName =
-        llvm::convertToSnakeFromCamelCase(op.getAttribute(i).name);
+          llvm::convertToSnakeFromCamelCase(op.getAttribute(i).name);
 
-      const auto &upperCamel = llvm::convertToCamelFromSnakeCase(attrName, true);
+      const auto &upperCamel =
+          llvm::convertToCamelFromSnakeCase(attrName, true);
 
       auto protoType = getAttrProtoType(attr);
 
@@ -559,17 +569,21 @@ static bool emitOpProtoSerializerSource(const RecordKeeper &records,
 
       if (isEnum(attr) && attr.isOptional()) {
         os << formatv("  if (op.get{0}()) {{\n", upperCamel);
-        os << formatv("    serialized.set_{0}(serialize{1}(*op.get{2}()));\n", attrName, protoType, upperCamel);
+        os << formatv("    serialized.set_{0}(serialize{1}(*op.get{2}()));\n",
+                      attrName, protoType, upperCamel);
         os << formatv("  }\n");
       } else if (isEnum(attr)) {
-        os << formatv("  serialized.set_{0}(serialize{1}(op.get{2}()));\n", attrName, protoType, upperCamel);
+        os << formatv("  serialized.set_{0}(serialize{1}(op.get{2}()));\n",
+                      attrName, protoType, upperCamel);
       } else if (attr.isOptional()) {
         os << formatv("  if (op.get{0}Attr()) {{\n", upperCamel);
-        os << formatv("    *serialized.mutable_{0}() = attributeSerializer.serialize{1}(op.get{2}Attr());\n",
+        os << formatv("    *serialized.mutable_{0}() = "
+                      "attributeSerializer.serialize{1}(op.get{2}Attr());\n",
                       attrName, protoType, upperCamel);
         os << formatv("  }\n");
       } else {
-        os << formatv("  *serialized.mutable_{0}() = attributeSerializer.serialize{1}(op.get{2}Attr());\n",
+        os << formatv("  *serialized.mutable_{0}() = "
+                      "attributeSerializer.serialize{1}(op.get{2}Attr());\n",
                       attrName, protoType, upperCamel);
       }
     }
@@ -580,16 +594,17 @@ static bool emitOpProtoSerializerSource(const RecordKeeper &records,
 
     for (unsigned i = 0; i != op.getNumSuccessors(); ++i) {
       const NamedSuccessor &successor = op.getSuccessor(i);
-      const auto &snakeName =
-        llvm::convertToSnakeFromCamelCase(successor.name);
-      const auto &upperCamel = llvm::convertToCamelFromSnakeCase(snakeName, true);
+      const auto &snakeName = llvm::convertToSnakeFromCamelCase(successor.name);
+      const auto &upperCamel =
+          llvm::convertToCamelFromSnakeCase(snakeName, true);
       if (successor.isVariadic()) {
         os << formatv("  for (auto s : op.get{0}()) {{\n", upperCamel);
         os << formatv("    auto protoS = serialized.add_{0}();\n", snakeName);
         os << formatv("    *protoS = blockCache.getMLIRBlockID(s);\n");
         os << formatv("  }\n");
       } else {
-        os << formatv("  *serialized.mutable_{0}() = blockCache.getMLIRBlockID(op.get{1}());\n",
+        os << formatv("  *serialized.mutable_{0}() = "
+                      "blockCache.getMLIRBlockID(op.get{1}());\n",
                       snakeName, upperCamel);
       }
     }
@@ -627,11 +642,13 @@ static bool emitOpProtoSerializerSource(const RecordKeeper &records,
   os << "  llvm::TypeSwitch<mlir::Value>(value)\n";
   os << "      .Case<mlir::OpResult>([this, &pValue](mlir::OpResult value) {\n";
   os << "        MLIROpResult opResult;\n";
-  os << "        *opResult.mutable_owner() = opCache.getMLIROpID(value.getOwner());\n";
+  os << "        *opResult.mutable_owner() = "
+        "opCache.getMLIROpID(value.getOwner());\n";
   os << "        opResult.set_result_number(value.getResultNumber());\n";
   os << "        *pValue.mutable_op_result() = opResult;\n";
   os << "      })\n";
-  os << "      .Case<mlir::BlockArgument>([this, &pValue](mlir::BlockArgument value) {\n";
+  os << "      .Case<mlir::BlockArgument>([this, &pValue](mlir::BlockArgument "
+        "value) {\n";
   os << "        MLIRBlockArgument blockArgument;\n";
   os << "        *blockArgument.mutable_owner() =\n";
   os << "            blockCache.getMLIRBlockID(value.getOwner());\n";
@@ -658,8 +675,7 @@ static void prepareOpAttribute(std::vector<ParamData> &data,
     return;
   }
 
-  const auto &attrName =
-    llvm::convertToSnakeFromCamelCase(operand.name);
+  const auto &attrName = llvm::convertToSnakeFromCamelCase(operand.name);
   auto deserName = formatv("{0}Deser", attrName).str();
   auto fixCppType = fixPrefix(attr.getStorageType().str());
   if (fixCppType == "CIRTLS_ModelAttr") {
@@ -677,11 +693,13 @@ static void prepareOpAttribute(std::vector<ParamData> &data,
   // EnumAttrs are stored purely as Enums
   // we need to create Attr from it for the Op builder
   if (isEnum(attr)) {
-    auto enumDeserializer = "EnumDeserializer::deserialize" + llvm::StringRef(fixCppType).drop_back(4).str();
-    data.push_back({paramCppType, attrName, deserName, serType,
-      (paramCppType + "::get(&mInfo.ctx, " + enumDeserializer + "($$))").str()});
-  }
-  else {
+    auto enumDeserializer = "EnumDeserializer::deserialize" +
+                            llvm::StringRef(fixCppType).drop_back(4).str();
+    data.push_back(
+        {paramCppType, attrName, deserName, serType,
+         (paramCppType + "::get(&mInfo.ctx, " + enumDeserializer + "($$))")
+             .str()});
+  } else {
     data.push_back({paramCppType, attrName, deserName, serType});
   }
 }
@@ -717,12 +735,12 @@ static void prepareParameters(std::vector<ParamData> &data,
     auto operandKind = operandArg.kind();
     auto operandId = operandArg.operandOrAttributeIndex();
     switch (operandKind) {
-      case mlir::tblgen::Operator::OperandOrAttribute::Kind::Operand:
-        prepareOpOperand(data, op.getOperand(operandId), "mlir::Value");
-        break;
-      case mlir::tblgen::Operator::OperandOrAttribute::Kind::Attribute:
-        prepareOpAttribute(data, op.getAttribute(operandId));
-        break;
+    case mlir::tblgen::Operator::OperandOrAttribute::Kind::Operand:
+      prepareOpOperand(data, op.getOperand(operandId), "mlir::Value");
+      break;
+    case mlir::tblgen::Operator::OperandOrAttribute::Kind::Attribute:
+      prepareOpAttribute(data, op.getAttribute(operandId));
+      break;
     }
   }
 
@@ -737,8 +755,7 @@ static void prepareParameters(std::vector<ParamData> &data,
   }
 }
 
-static bool checker(const RecordKeeper &records,
-  llvm::raw_ostream &os) {
+static bool checker(const RecordKeeper &records, llvm::raw_ostream &os) {
   auto defs = getRequestedOpDefinitions(records);
   checkType("mlir::Block *", os);
   checkType("mlir::Value", os);
@@ -751,11 +768,13 @@ static bool checker(const RecordKeeper &records,
       auto operandKind = operandArg.kind();
       auto operandId = operandArg.operandOrAttributeIndex();
       switch (operandKind) {
-        case mlir::tblgen::Operator::OperandOrAttribute::Kind::Operand:
-          break;
-        case mlir::tblgen::Operator::OperandOrAttribute::Kind::Attribute:
-          checkType(removeGlobalScopeQualifier(op.getAttribute(operandId).attr.getStorageType()), os);
-          break;
+      case mlir::tblgen::Operator::OperandOrAttribute::Kind::Operand:
+        break;
+      case mlir::tblgen::Operator::OperandOrAttribute::Kind::Attribute:
+        checkType(removeGlobalScopeQualifier(
+                      op.getAttribute(operandId).attr.getStorageType()),
+                  os);
+        break;
       }
     }
   }
@@ -766,27 +785,31 @@ static void aggregateOperation(const Operator &op,
                                const std::string &varName,
                                CppProtoDeserializer &addTo) {
   auto name = normalizeName(op.getCppClassName());
-  auto cppName = formatv("{0}::{1}", cppNamespace.factualType, op.getCppClassName()).str();
+  auto cppName =
+      formatv("{0}::{1}", cppNamespace.factualType, op.getCppClassName()).str();
 
   std::vector<ParamData> params;
   prepareParameters(params, op);
 
   // TryOp also expects regions count as the last argument
   // regions are not serialized at the moment
-  const char *const builder = name == "TryOp"
-    ? "return mInfo.builder.create<{0}>(mInfo.builder.getUnknownLoc(), {1}, 0);"
-    : params.empty()
-    ? "return mInfo.builder.create<{0}>(mInfo.builder.getUnknownLoc(){1});"
-    : "return mInfo.builder.create<{0}>(mInfo.builder.getUnknownLoc(), {1});";
+  const char *const builder =
+      name == "TryOp"
+          ? "return mInfo.builder.create<{0}>(mInfo.builder.getUnknownLoc(), "
+            "{1}, 0);"
+      : params.empty()
+          ? "return "
+            "mInfo.builder.create<{0}>(mInfo.builder.getUnknownLoc(){1});"
+          : "return mInfo.builder.create<{0}>(mInfo.builder.getUnknownLoc(), "
+            "{1});";
 
-  auto deserializer = deserializeParameters(name, cppName, params,
-    varName, builder);
+  auto deserializer =
+      deserializeParameters(name, cppName, params, varName, builder);
   addTo.addStandardCase(cppName, cppNamespace.namedType, name, deserializer);
 }
 
 static bool emitOpProtoDeserializer(const RecordKeeper &records,
-                                    raw_ostream &os,
-                                    bool emitDecl) {
+                                    raw_ostream &os, bool emitDecl) {
   const char *const defHeaderOpen = R"(
 #include "cir-tac/OpDeserializer.h"
 #include "cir-tac/EnumDeserializer.h"
@@ -820,14 +843,14 @@ namespace protocir {
   const char *const varName = "pOp";
 
   std::vector<mlir::tblgen::MethodParameter> params = {
-    {"FunctionInfo &", "fInfo"},
-    {"ModuleInfo &", "mInfo"}
-  };
+      {"FunctionInfo &", "fInfo"}, {"ModuleInfo &", "mInfo"}};
 
-  CppProtoDeserializer deserClass("OpDeserializer", {"mlir::Operation *", "MLIROp"},
-    "Operation", varName, declHeaderOpen, declHeaderClose, defHeaderOpen, "", params);
+  CppProtoDeserializer deserClass(
+      "OpDeserializer", {"mlir::Operation *", "MLIROp"}, "Operation", varName,
+      declHeaderOpen, declHeaderClose, defHeaderOpen, "", params);
 
-  deserClass.setStandardCaseBody("return deserialize{0}({3}{1}.{2}()).getOperation();\n");
+  deserClass.setStandardCaseBody(
+      "return deserialize{0}({3}{1}.{2}()).getOperation();\n");
 
   for (auto *def : defs) {
     Operator op(def);
@@ -835,7 +858,7 @@ namespace protocir {
   }
 
   generateCodeFile(deserClass, /*disableClang=*/true, /*addLicense=*/false,
-    emitDecl, os);
+                   emitDecl, os);
 
   return false;
 }
@@ -894,7 +917,8 @@ static bool emitOpKotlinExprs(const RecordKeeper &records, raw_ostream &os) {
 
       for (int i = 0; i != op.getNumNativeAttributes(); ++i) {
         const auto &attr = op.getAttribute(i).attr;
-        const auto &attrName = normalizeFieldName(llvm::convertToCamelFromSnakeCase(op.getAttribute(i).name));
+        const auto &attrName = normalizeFieldName(
+            llvm::convertToCamelFromSnakeCase(op.getAttribute(i).name));
         const auto &protoType = getAttrProtoType(attr);
 
         if (attr.getStorageType().starts_with("::cir::AST")) {
@@ -921,8 +945,10 @@ static bool emitOpKotlinExprs(const RecordKeeper &records, raw_ostream &os) {
 
       assert(op.getNumResults() == 1);
       auto result = op.getResult(0);
-      assert(!result.isOptional() && !result.isVariadic() && !result.isVariadicOfVariadic());
-      auto resultName = normalizeFieldName(llvm::convertToCamelFromSnakeCase(result.name));
+      assert(!result.isOptional() && !result.isVariadic() &&
+             !result.isVariadicOfVariadic());
+      auto resultName =
+          normalizeFieldName(llvm::convertToCamelFromSnakeCase(result.name));
       os << formatv("    val {0}: MLIRTypeID,\n", resultName);
 
       os << "): CIRExpr {\n";
@@ -955,12 +981,12 @@ static bool emitOpKotlinInst(const RecordKeeper &records, raw_ostream &os) {
   os << "}\n";
   os << "\n";
 
-  os <<  "data class CIRAssignInst(\n";
-  os <<  "    override val location: CIRInstLocation,\n";
-  os <<  "    override val id: MLIROpID,\n";
-  os <<  "    override val lhv: MLIRValue,\n";
-  os <<  "    override val rhv: CIRExpr,\n";
-  os <<  "): CIRInst, CommonAssignInst\n";
+  os << "data class CIRAssignInst(\n";
+  os << "    override val location: CIRInstLocation,\n";
+  os << "    override val id: MLIROpID,\n";
+  os << "    override val lhv: MLIRValue,\n";
+  os << "    override val rhv: CIRExpr,\n";
+  os << "): CIRInst, CommonAssignInst\n";
   os << "\n";
 
   for (auto *def : defs) {
@@ -968,8 +994,8 @@ static bool emitOpKotlinInst(const RecordKeeper &records, raw_ostream &os) {
     if (instructionOps.count(op.getCppClassName())) {
       auto name = normalizeName(op.getCppClassName());
       os << formatv("data class CIR{0}Inst(\n", name);
-      os <<  "    override val location: CIRInstLocation,\n";
-      os <<  "    override val id: MLIROpID,\n";
+      os << "    override val location: CIRInstLocation,\n";
+      os << "    override val id: MLIROpID,\n";
       os << "\n";
       for (int i = 0; i != op.getNumOperands(); ++i) {
         const auto &operand = op.getOperand(i);
@@ -991,7 +1017,8 @@ static bool emitOpKotlinInst(const RecordKeeper &records, raw_ostream &os) {
 
       for (int i = 0; i != op.getNumNativeAttributes(); ++i) {
         const auto &attr = op.getAttribute(i).attr;
-        const auto &attrName = normalizeFieldName(llvm::convertToCamelFromSnakeCase(op.getAttribute(i).name));
+        const auto &attrName = normalizeFieldName(
+            llvm::convertToCamelFromSnakeCase(op.getAttribute(i).name));
         const auto &protoType = getAttrProtoType(attr);
 
         if (attr.getStorageType().starts_with("::cir::AST")) {
@@ -1011,8 +1038,8 @@ static bool emitOpKotlinInst(const RecordKeeper &records, raw_ostream &os) {
 
       for (unsigned i = 0; i != op.getNumSuccessors(); ++i) {
         const NamedSuccessor &successor = op.getSuccessor(i);
-        const auto &successorName =
-          normalizeFieldName(llvm::convertToCamelFromSnakeCase(successor.name));
+        const auto &successorName = normalizeFieldName(
+            llvm::convertToCamelFromSnakeCase(successor.name));
         if (successor.isVariadic()) {
           os << formatv("    val {0}: List<MLIRBlockID>,\n", successorName);
         } else {
@@ -1026,7 +1053,8 @@ static bool emitOpKotlinInst(const RecordKeeper &records, raw_ostream &os) {
 
       for (int i = 0; i != op.getNumResults(); ++i) {
         const auto &result = op.getResult(i);
-        auto resultName = normalizeFieldName(llvm::convertToCamelFromSnakeCase(result.name));
+        auto resultName =
+            normalizeFieldName(llvm::convertToCamelFromSnakeCase(result.name));
         if (result.isOptional()) {
           os << formatv("    val {0}: MLIRTypeID?,\n", resultName);
         } else if (result.isVariadicOfVariadic()) {
@@ -1064,7 +1092,7 @@ static bool emitOpKotlinExprsBuilder(const RecordKeeper &records,
       std::transform(snake.begin(), snake.end(), snake.begin(), ::toupper);
       os << formatv(
           "    Op.MLIROp.OperationCase.{0} -> buildCIR{1}Expr(expr.{2})\n",
-                    snake, name, lowerCamel);
+          snake, name, lowerCamel);
     }
   }
   os << "    else -> throw Exception()\n";
@@ -1079,15 +1107,20 @@ static bool emitOpKotlinExprsBuilder(const RecordKeeper &records,
       os << formatv("fun buildCIR{0}Expr(expr: Op.CIR{0}) =\n", name);
       os << formatv("    CIR{0}Expr(\n", name);
       for (auto operand : op.getOperands()) {
-        auto lowerCamel = normalizeGetter(llvm::convertToCamelFromSnakeCase(operand.name, false));
+        auto lowerCamel = normalizeGetter(
+            llvm::convertToCamelFromSnakeCase(operand.name, false));
         auto upperCamel = lowerCamel;
         upperCamel[0] = ::toupper(upperCamel[0]);
         if (operand.isOptional()) {
-          os << formatv("        if (expr.has{1}()) buildMLIRValue(expr.{0}) else null,\n", lowerCamel, upperCamel);
+          os << formatv("        if (expr.has{1}()) buildMLIRValue(expr.{0}) "
+                        "else null,\n",
+                        lowerCamel, upperCamel);
         } else if (operand.isVariadicOfVariadic()) {
-          os << formatv("        buildMLIRValueArrayArray(expr.{0}List),\n", lowerCamel);
+          os << formatv("        buildMLIRValueArrayArray(expr.{0}List),\n",
+                        lowerCamel);
         } else if (operand.isVariadic()) {
-          os << formatv("        buildMLIRValueArray(expr.{0}List),\n", lowerCamel);
+          os << formatv("        buildMLIRValueArray(expr.{0}List),\n",
+                        lowerCamel);
         } else {
           os << formatv("        buildMLIRValue(expr.{0}),\n", lowerCamel);
         }
@@ -1095,7 +1128,8 @@ static bool emitOpKotlinExprsBuilder(const RecordKeeper &records,
 
       for (int i = 0; i < op.getNumNativeAttributes(); ++i) {
         const auto &attr = op.getAttribute(i).attr;
-        const auto &attrName = normalizeGetter(llvm::convertToCamelFromSnakeCase(op.getAttribute(i).name));
+        const auto &attrName = normalizeGetter(
+            llvm::convertToCamelFromSnakeCase(op.getAttribute(i).name));
         auto upperCamel = llvm::convertToCamelFromSnakeCase(attrName, true);
         const auto &protoType = getAttrProtoType(attr);
 
@@ -1104,7 +1138,9 @@ static bool emitOpKotlinExprsBuilder(const RecordKeeper &records,
         }
 
         if (attr.isOptional()) {
-          os << formatv("        if (expr.has{2}()) build{1}(expr.{0}) else null,\n", attrName, protoType, upperCamel);
+          os << formatv(
+              "        if (expr.has{2}()) build{1}(expr.{0}) else null,\n",
+              attrName, protoType, upperCamel);
         } else {
           os << formatv("        build{1}(expr.{0}),\n", attrName, protoType);
         }
@@ -1112,24 +1148,30 @@ static bool emitOpKotlinExprsBuilder(const RecordKeeper &records,
 
       for (auto successor : op.getSuccessors()) {
         const auto &successorName =
-          normalizeGetter(llvm::convertToCamelFromSnakeCase(successor.name));
+            normalizeGetter(llvm::convertToCamelFromSnakeCase(successor.name));
         if (successor.isVariadic()) {
-          os << formatv("        buildMLIRBlockIDArray(expr.{0}List),\n", successorName);
+          os << formatv("        buildMLIRBlockIDArray(expr.{0}List),\n",
+                        successorName);
         } else {
           os << formatv("        buildMLIRBlockID(expr.{0}),\n", successorName);
         }
       }
 
       for (auto result : op.getResults()) {
-        auto lowerCamel = normalizeGetter(llvm::convertToCamelFromSnakeCase(result.name, false));
+        auto lowerCamel = normalizeGetter(
+            llvm::convertToCamelFromSnakeCase(result.name, false));
         auto upperCamel = lowerCamel;
         upperCamel[0] = ::toupper(upperCamel[0]);
         if (result.isOptional()) {
-          os << formatv("        if (expr.has{0}()) buildMLIRTypeID(expr.{1}) else null,\n", upperCamel, lowerCamel);
+          os << formatv("        if (expr.has{0}()) buildMLIRTypeID(expr.{1}) "
+                        "else null,\n",
+                        upperCamel, lowerCamel);
         } else if (result.isVariadicOfVariadic()) {
-          os << formatv("        buildMLIRTypeIDArrayArray(expr.{0}List),\n", lowerCamel);
+          os << formatv("        buildMLIRTypeIDArrayArray(expr.{0}List),\n",
+                        lowerCamel);
         } else if (result.isVariadic()) {
-          os << formatv("        buildMLIRTypeIDArray(expr.{0}List),\n", lowerCamel);
+          os << formatv("        buildMLIRTypeIDArray(expr.{0}List),\n",
+                        lowerCamel);
         } else {
           os << formatv("        buildMLIRTypeID(expr.{0}),\n", lowerCamel);
         }
@@ -1144,7 +1186,7 @@ static bool emitOpKotlinExprsBuilder(const RecordKeeper &records,
 }
 
 static bool emitOpKotlinInstBuilder(const RecordKeeper &records,
-                                     raw_ostream &os) {
+                                    raw_ostream &os) {
   os << autogenMessage;
   os << jacoDBLicense;
   os << "\n";
@@ -1164,7 +1206,8 @@ static bool emitOpKotlinInstBuilder(const RecordKeeper &records,
   os << "\n";
   os << "    fun buildInst(inst: Op.MLIROp) : CIRInst {\n";
   os << "        val id = buildMLIROpID(inst.id)\n";
-  os << "        val location = CIRInstLocation(function, buildMLIRLocation(inst.location))\n";
+  os << "        val location = CIRInstLocation(function, "
+        "buildMLIRLocation(inst.location))\n";
   os << "\n";
 
   os << "        if (CIRExpressions.contains(inst.operationCase!!)) {\n";
@@ -1187,8 +1230,8 @@ static bool emitOpKotlinInstBuilder(const RecordKeeper &records,
       auto snake = llvm::convertToSnakeFromCamelCase(name);
       auto lowerCamel = llvm::convertToCamelFromSnakeCase(snake, false);
       std::transform(snake.begin(), snake.end(), snake.begin(), ::toupper);
-      os << formatv(
-                    "            Op.MLIROp.OperationCase.{0} -> buildCIR{1}Inst(inst.{2}, id, location)\n",
+      os << formatv("            Op.MLIROp.OperationCase.{0} -> "
+                    "buildCIR{1}Inst(inst.{2}, id, location)\n",
                     snake, name, lowerCamel);
     }
   }
@@ -1202,20 +1245,27 @@ static bool emitOpKotlinInstBuilder(const RecordKeeper &records,
     Operator op(*def);
     if (instructionOps.count(op.getCppClassName())) {
       auto name = normalizeName(op.getCppClassName());
-      os << formatv("fun buildCIR{0}Inst(inst: Op.CIR{0}, id: MLIROpID, location: CIRInstLocation) =\n", name);
+      os << formatv("fun buildCIR{0}Inst(inst: Op.CIR{0}, id: MLIROpID, "
+                    "location: CIRInstLocation) =\n",
+                    name);
       os << formatv("    CIR{0}Inst(\n", name);
       os << formatv("        location,\n");
       os << formatv("        id,\n");
       for (auto operand : op.getOperands()) {
-        auto lowerCamel = normalizeGetter(llvm::convertToCamelFromSnakeCase(operand.name, false));
+        auto lowerCamel = normalizeGetter(
+            llvm::convertToCamelFromSnakeCase(operand.name, false));
         auto upperCamel = lowerCamel;
         upperCamel[0] = ::toupper(upperCamel[0]);
         if (operand.isOptional()) {
-          os << formatv("        if (inst.has{1}()) buildMLIRValue(inst.{0}) else null,\n", lowerCamel, upperCamel);
+          os << formatv("        if (inst.has{1}()) buildMLIRValue(inst.{0}) "
+                        "else null,\n",
+                        lowerCamel, upperCamel);
         } else if (operand.isVariadicOfVariadic()) {
-          os << formatv("        buildMLIRValueArrayArray(inst.{0}List),\n", lowerCamel);
+          os << formatv("        buildMLIRValueArrayArray(inst.{0}List),\n",
+                        lowerCamel);
         } else if (operand.isVariadic()) {
-          os << formatv("        buildMLIRValueArray(inst.{0}List),\n", lowerCamel);
+          os << formatv("        buildMLIRValueArray(inst.{0}List),\n",
+                        lowerCamel);
         } else {
           os << formatv("        buildMLIRValue(inst.{0}),\n", lowerCamel);
         }
@@ -1223,7 +1273,8 @@ static bool emitOpKotlinInstBuilder(const RecordKeeper &records,
 
       for (int i = 0; i < op.getNumNativeAttributes(); ++i) {
         const auto &attr = op.getAttribute(i).attr;
-        const auto &attrName = normalizeGetter(llvm::convertToCamelFromSnakeCase(op.getAttribute(i).name));
+        const auto &attrName = normalizeGetter(
+            llvm::convertToCamelFromSnakeCase(op.getAttribute(i).name));
         auto upperCamel = llvm::convertToCamelFromSnakeCase(attrName, true);
         const auto &protoType = getAttrProtoType(attr);
 
@@ -1232,7 +1283,9 @@ static bool emitOpKotlinInstBuilder(const RecordKeeper &records,
         }
 
         if (attr.isOptional()) {
-          os << formatv("        if (inst.has{2}()) build{1}(inst.{0}) else null,\n", attrName, protoType, upperCamel);
+          os << formatv(
+              "        if (inst.has{2}()) build{1}(inst.{0}) else null,\n",
+              attrName, protoType, upperCamel);
         } else {
           os << formatv("        build{1}(inst.{0}),\n", attrName, protoType);
         }
@@ -1240,24 +1293,30 @@ static bool emitOpKotlinInstBuilder(const RecordKeeper &records,
 
       for (auto successor : op.getSuccessors()) {
         const auto &successorName =
-          normalizeGetter(llvm::convertToCamelFromSnakeCase(successor.name));
+            normalizeGetter(llvm::convertToCamelFromSnakeCase(successor.name));
         if (successor.isVariadic()) {
-          os << formatv("        buildMLIRBlockIDArray(inst.{0}List),\n", successorName);
+          os << formatv("        buildMLIRBlockIDArray(inst.{0}List),\n",
+                        successorName);
         } else {
           os << formatv("        buildMLIRBlockID(inst.{0}),\n", successorName);
         }
       }
 
       for (auto result : op.getResults()) {
-        auto lowerCamel = normalizeGetter(llvm::convertToCamelFromSnakeCase(result.name, false));
+        auto lowerCamel = normalizeGetter(
+            llvm::convertToCamelFromSnakeCase(result.name, false));
         auto upperCamel = lowerCamel;
         upperCamel[0] = ::toupper(upperCamel[0]);
         if (result.isOptional()) {
-          os << formatv("        if (inst.has{0}()) buildMLIRTypeID(inst.{1}) else null,\n", upperCamel, lowerCamel);
+          os << formatv("        if (inst.has{0}()) buildMLIRTypeID(inst.{1}) "
+                        "else null,\n",
+                        upperCamel, lowerCamel);
         } else if (result.isVariadicOfVariadic()) {
-          os << formatv("        buildMLIRTypeIDArrayArray(inst.{0}List),\n", lowerCamel);
+          os << formatv("        buildMLIRTypeIDArrayArray(inst.{0}List),\n",
+                        lowerCamel);
         } else if (result.isVariadic()) {
-          os << formatv("        buildMLIRTypeIDArray(inst.{0}List),\n", lowerCamel);
+          os << formatv("        buildMLIRTypeIDArray(inst.{0}List),\n",
+                        lowerCamel);
         } else {
           os << formatv("        buildMLIRTypeID(inst.{0}),\n", lowerCamel);
         }
@@ -1272,71 +1331,56 @@ static bool emitOpKotlinInstBuilder(const RecordKeeper &records,
 }
 
 static bool emitOpProtoDeserializerSource(const RecordKeeper &records,
-  llvm::raw_ostream &os) {
+                                          llvm::raw_ostream &os) {
   return emitOpProtoDeserializer(records, os, /*emitDecl=*/false);
 }
 
 static bool emitOpProtoDeserializerHeader(const RecordKeeper &records,
-  llvm::raw_ostream &os) {
+                                          llvm::raw_ostream &os) {
   return emitOpProtoDeserializer(records, os, /*emitDecl=*/true);
 }
 
 static mlir::GenRegistration
-genOpProto(
-  "gen-op-proto",
-  "Generate proto file for ops",
-  &emitOpProto);
+    genOpProto("gen-op-proto", "Generate proto file for ops", &emitOpProto);
 
 static mlir::GenRegistration
-genOpProtoSerializerHeader(
-  "gen-op-proto-serializer-header",
-  "Generate proto serializer .h for ops",
-  &emitOpProtoSerializerHeader);
+    genOpProtoSerializerHeader("gen-op-proto-serializer-header",
+                               "Generate proto serializer .h for ops",
+                               &emitOpProtoSerializerHeader);
 
 static mlir::GenRegistration
-genOpProtoSerializerSource(
-  "gen-op-proto-serializer-source",
-  "Generate proto serializer .cpp for ops",
-  &emitOpProtoSerializerSource);
+    genOpProtoSerializerSource("gen-op-proto-serializer-source",
+                               "Generate proto serializer .cpp for ops",
+                               &emitOpProtoSerializerSource);
+
+static mlir::GenRegistration genOpKotlinExprs("gen-op-kotlin-expr",
+                                              "Generate kotlin expr for ops",
+                                              &emitOpKotlinExprs);
+
+static mlir::GenRegistration genOpKotlinInst("gen-op-kotlin-inst",
+                                             "Generate kotlin inst for ops",
+                                             &emitOpKotlinInst);
 
 static mlir::GenRegistration
-genOpKotlinExprs(
-  "gen-op-kotlin-expr",
-  "Generate kotlin expr for ops",
-  &emitOpKotlinExprs);
+    genOpKotlinExprsBuilder("gen-op-kotlin-expr-builder",
+                            "Generate kotlin expr builder for ops",
+                            &emitOpKotlinExprsBuilder);
 
 static mlir::GenRegistration
-genOpKotlinInst(
-  "gen-op-kotlin-inst",
-  "Generate kotlin inst for ops",
-  &emitOpKotlinInst);
+    genOpKotliInstBuilder("gen-op-kotlin-inst-builder",
+                          "Generate kotlin inst builder for ops",
+                          &emitOpKotlinInstBuilder);
 
 static mlir::GenRegistration
-genOpKotlinExprsBuilder(
-  "gen-op-kotlin-expr-builder",
-  "Generate kotlin expr builder for ops",
-  &emitOpKotlinExprsBuilder);
+    genOpProtoDeserializerHeader("gen-op-proto-deserializer-header",
+                                 "Generate proto deserializer .h for ops",
+                                 &emitOpProtoDeserializerHeader);
 
 static mlir::GenRegistration
-genOpKotliInstBuilder(
-  "gen-op-kotlin-inst-builder",
-  "Generate kotlin inst builder for ops",
-  &emitOpKotlinInstBuilder);
+    genOpProtoDeserializerSource("gen-op-proto-deserializer-source",
+                                 "Generate proto deserializer .cpp for ops",
+                                 &emitOpProtoDeserializerSource);
 
 static mlir::GenRegistration
-genOpProtoDeserializerHeader(
-  "gen-op-proto-deserializer-header",
-  "Generate proto deserializer .h for ops",
-  &emitOpProtoDeserializerHeader);
-
-static mlir::GenRegistration
-genOpProtoDeserializerSource(
-  "gen-op-proto-deserializer-source",
-  "Generate proto deserializer .cpp for ops",
-  &emitOpProtoDeserializerSource);
-
-static mlir::GenRegistration
-genOpProtoChecker(
-  "gen-op-proto-check-types",
-  "Check types are correctly matched",
-  &checker);
+    genOpProtoChecker("gen-op-proto-check-types",
+                      "Check types are correctly matched", &checker);
