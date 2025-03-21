@@ -20,7 +20,7 @@ def get_td_path(clangir_path, td_file):
 
 
 def run_tblgen_command(clangir_path, subcmd, td_file, result_path):
-    tblgen_path = os.path.join(clangir_path, "llvm", "build", "bin", "mlir-tblgen")
+    tblgen_path = os.path.join("build", "tools", "cir-tac-tblgen", "cir-tac-tblgen")
     cmd = "{0} {1} --{2} {3} > {4}".format(
         tblgen_path,
         get_include_args(clangir_path),
@@ -94,7 +94,7 @@ def gen_all(clangir_path, subcmd, td_file, name):
 
 def main():
     if len(sys.argv) != 3:
-        print("Expected paths to clangir build and to cir-tac build directories!")
+        print("Expected paths to clangir and cir-tac directories!")
         return -1
     clangir = sys.argv[1]
     cir_tac = sys.argv[2]
