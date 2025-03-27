@@ -34,8 +34,15 @@ jobs:
       CLANGIR_REPOSITORY: ${{ needs.env-setup.outputs.clangir-repository }}
       CLANGIR_VERSION: ${{ needs.env-setup.outputs.clangir-version }}
 
-  run-tests:
+  cmp-tblgen-files:
     needs: [env-setup, build-clangir]
+    uses: ./.github/workflows/tblgen-check.yml
+    with:
+      CLANGIR_REPOSITORY: ${{ needs.env-setup.outputs.clangir-repository }}
+      CLANGIR_VERSION: ${{ needs.env-setup.outputs.clangir-version }}
+
+  run-tests:
+    needs: [env-setup, cmp-tblgen-files]
     uses: ./.github/workflows/gsac-test.yml
     with:
       CLANGIR_REPOSITORY: ${{ needs.env-setup.outputs.clangir-repository }}

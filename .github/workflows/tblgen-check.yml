@@ -1,0 +1,57 @@
+name: Tblgen'erated files check
+
+on:
+  workflow_call:
+    inputs:
+      CLANGIR_REPOSITORY:
+        description: "Name of ClangIR repository"
+        required: true
+        type: string
+      CLANGIR_VERSION:
+        description: "ClangIR version to use"
+        required: true
+        type: string
+
+env:
+  TEST_DIR: "./test"
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: Checkout cir-tac
+      uses: actions/checkout@v4
+
+    - name: Restore clangir build
+      uses: actions/cache/restore@v4
+      with:
+        path: clangir/llvm/build
+        key: ${{ matrix.os }}-${{ inputs.CLANGIR_REPOSITORY }}-${{ inputs.CLANGIR_VERSION }}-clangir-build
+
+    - name: Download cir-tac precompiled tools
+      uses: actions/download-artifact@v4
+      with:
+        name: cir-tac-${{ matrix.os }}-${{ runner.arch }}
+        path: ${{ github.workspace }}/build/tools
+
+    - name: Add permissions to cir-tac tools
+      run: |
+        chmod -R +x ./build/tools/
+
+    - name: Environment setup (MacOS)
+      if: startsWith(runner.os, 'macOS')
+      run: |
+        SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
+        echo "SDKROOT=$SDKROOT" >> $GITHUB_ENV
+        brew install protobuf ninja
+
+    - name: Generate proto-files
+      run: ${{ github.workspace }}/scripts/build_proto_files.py "clangir" ${{ github.workspace }} ${{ env.TEST_DIR }}
+
+    - name: Compare proto-files
+      run: ${{ github.workspace }}/scripts/cmp_tblgen_files.py "clangir" ${{ env.TEST_DIR }}
