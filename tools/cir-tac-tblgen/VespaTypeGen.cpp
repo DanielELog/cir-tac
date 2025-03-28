@@ -108,7 +108,7 @@ static bool emitTypeProto(const RecordKeeper &records, llvm::raw_ostream &os) {
 
   os << "message CIRStructType {\n";
   os << "  repeated MLIRTypeID members = 1;\n";
-  os << "  MLIRStringAttr name = 2;\n";
+  os << "  optional MLIRStringAttr name = 2;\n";
   os << "  bool incomplete = 3;\n";
   os << "  bool packed = 4;\n";
   os << "  CIRRecordKind kind = 5;\n";
@@ -156,7 +156,9 @@ CIRStructType serialized;
 for (auto i : type.getMembers()) {
   serialized.mutable_members()->Add(typeCache.getMLIRTypeID(i));
 }
-*serialized.mutable_name() = attributeSerializer.serializeMLIRStringAttr(type.getName());
+if (type.getName()) {
+  *serialized.mutable_name() = attributeSerializer.serializeMLIRStringAttr(type.getName());
+}
 serialized.set_incomplete(type.getIncomplete());
 serialized.set_packed(type.getPacked());
 serialized.set_kind(serializeCIRRecordKind(type.getKind()));
