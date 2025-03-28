@@ -248,7 +248,7 @@ message CIRVoidType {
 
 message CIRStructType {
   repeated MLIRTypeID members = 1;
-  MLIRStringAttr name = 2;
+  optional MLIRStringAttr name = 2;
   bool incomplete = 3;
   bool packed = 4;
   CIRRecordKind kind = 5;

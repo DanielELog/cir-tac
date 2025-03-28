@@ -519,7 +519,9 @@ CIRStructType TypeSerializer::serializeCIRStructType(cir::StructType type) {
   for (auto i : type.getMembers()) {
     serialized.mutable_members()->Add(typeCache.getMLIRTypeID(i));
   }
-  *serialized.mutable_name() = attributeSerializer.serializeMLIRStringAttr(type.getName());
+  if (type.getName()) {
+    *serialized.mutable_name() = attributeSerializer.serializeMLIRStringAttr(type.getName());
+  }
   serialized.set_incomplete(type.getIncomplete());
   serialized.set_packed(type.getPacked());
   serialized.set_kind(serializeCIRRecordKind(type.getKind()));

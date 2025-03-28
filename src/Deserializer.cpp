@@ -283,10 +283,14 @@ void Deserializer::defineType(ModuleInfo &mInfo, const MLIRType &pTy) {
 void Deserializer::defineIncompleteStruct(ModuleInfo &mInfo,
                                           const MLIRType &pTy) {
   assert(pTy.has_cir_struct_type() && "pTy is not of StructType!");
-  auto nameAttr = AttrDeserializer::deserializeMLIRStringAttr(
-      mInfo, pTy.cir_struct_type().name());
+  auto pStruct = pTy.cir_struct_type();
+  mlir::StringAttr nameAttr;
+  if (pStruct.has_name()) {
+    nameAttr = AttrDeserializer::deserializeMLIRStringAttr(
+      mInfo, pStruct.name());
+  }
   auto recordKind =
-      EnumDeserializer::deserializeCIRRecordKind(pTy.cir_struct_type().kind());
+      EnumDeserializer::deserializeCIRRecordKind(pStruct.kind());
   auto incompleteStruct =
       cir::StructType::get(&mInfo.ctx, nameAttr, recordKind);
   mInfo.types[pTy.id().id()] = incompleteStruct;
@@ -297,8 +301,11 @@ void Deserializer::defineCompleteStruct(ModuleInfo &mInfo,
   assert(pTy.has_cir_struct_type() && "pTy is not of StructType");
   assert(!pTy.cir_struct_type().incomplete() && "incomplete struct received!");
   auto pStruct = pTy.cir_struct_type();
-  auto attrName =
+  mlir::StringAttr nameAttr;
+  if (pStruct.has_name()) {
+    nameAttr =
       AttrDeserializer::deserializeMLIRStringAttr(mInfo, pStruct.name());
+  }
   auto pRecordKind = pStruct.kind();
   auto recordKind = EnumDeserializer::deserializeCIRRecordKind(pRecordKind);
   auto packed = pStruct.packed();
@@ -311,7 +318,7 @@ void Deserializer::defineCompleteStruct(ModuleInfo &mInfo,
     ast = mlir::cast<cir::ASTRecordDeclInterface>(
         parseAttribute(pStruct.raw_ast(), &mInfo.ctx));
   }
-  auto fullStruct = cir::StructType::get(&mInfo.ctx, memberTys, attrName,
+  auto fullStruct = cir::StructType::get(&mInfo.ctx, memberTys, nameAttr,
                                          packed, recordKind, ast);
   /* completion will fail if the data is mismatched with preexisting one */
   fullStruct.complete(memberTys, packed);
