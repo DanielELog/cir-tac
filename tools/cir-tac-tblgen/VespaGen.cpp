@@ -699,7 +699,7 @@ void vespa::deserializeParameter(const ParamData &p, llvm::StringRef varName,
 }
 
 std::string vespa::deserializeParameters(
-    llvm::StringRef ty, llvm::StringRef cppTy, llvm::ArrayRef<ParamData> ps,
+    llvm::StringRef cppTy, llvm::ArrayRef<ParamData> ps,
     llvm::StringRef varName, const char *finisher, bool doesNeedCtx) {
   std::string serializerRaw;
   llvm::raw_string_ostream os(serializerRaw);
@@ -734,6 +734,39 @@ std::string vespa::deserializeParameters(
   os << formatv(finisher, cppTy, builderParams);
 
   return serializerRaw;
+}
+
+std::string serializeElementKotlin(const ParamData &p, llvm::StringRef serObj,
+                                   llvm::StringRef varName) {
+  if (primitiveSerializable.count(p.cppType)) {
+    return formatv("{0}.set{1}({2})", serObj, p.name, varName);
+  }
+
+}
+
+std::string serializeEmptyKotlin(const ParamData &p) {
+  return formatv("");
+}
+
+void vespa::serializeParamKotlin(const ParamData &p, llvm::StringRef varName,
+                                 llvm::raw_ostream &os) {
+  switch (p.serType) {
+  case ValueType::EMPTY:
+
+  }
+}
+
+std::string vespa::serializeParamsKotlin(llvm::ArrayRef<ParamData> ps,
+                                         llvm::StringRef varName) {
+  std::string serializer;
+  llvm::raw_string_ostream os(serializer);
+
+  for (auto &p : ps) {
+    serializeParamKotlin(p, varName, os);
+    os << ",\n";
+  }
+
+  return serializer;
 }
 
 void vespa::buildParameter(mlir::tblgen::AttrOrTypeParameter &p,

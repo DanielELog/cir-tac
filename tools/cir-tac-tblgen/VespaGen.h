@@ -89,10 +89,16 @@ serializeParameters(llvm::StringRef ty,
 void deserializeParameter(const ParamData &p, llvm::StringRef varName,
                           llvm::raw_ostream &os);
 
-std::string deserializeParameters(llvm::StringRef ty, llvm::StringRef cppTy,
+std::string deserializeParameters(llvm::StringRef cppTy,
                                   llvm::ArrayRef<ParamData> ps,
                                   llvm::StringRef varName, const char *finisher,
                                   bool doesNeedCtx = false);
+
+void serializeParamKotlin(const ParamData &p, llvm::StringRef varName,
+                          llvm::raw_ostream &os);
+
+std::string serializeParamsKotlin(llvm::ArrayRef<ParamData> ps,
+                                  llvm::StringRef varName);
 
 void checkType(llvm::StringRef typ, llvm::raw_ostream &os);
 
