@@ -1,3 +1,4 @@
+#include "VespaCommon.h"
 #include "VespaGen.h"
 
 #include "mlir/TableGen/AttrOrTypeDef.h"
@@ -7,6 +8,7 @@
 #include "llvm/Support/FormatVariadic.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/TableGen/Record.h"
+#include <vector>
 
 using llvm::formatv;
 using llvm::Record;
@@ -191,8 +193,7 @@ return serialized;
   }
   serClass.addStandardCase("cir::StructType", "CIRStructType", structSer);
 
-  generateCodeFile(serClass, /*disableClang=*/true, /*addLicense=*/false,
-                   emitDecl, os);
+  generateCppFile(serClass, emitDecl, os);
 
   return false;
 }
@@ -284,6 +285,63 @@ static bool emitTypeProtoDeserializerSource(const RecordKeeper &records,
 static bool emitTypeProtoDeserializerHeader(const RecordKeeper &records,
                                             llvm::raw_ostream &os) {
   return emitTypeProtoDeserializer(records, os, /*emitDecl=*/true);
+}
+
+static void aggregateType(AttrOrTypeDef &typ, llvm::StringRef varName,
+                          KotlinProtoSerializer &addTo) {
+  std::vector<ParamData> params;
+  for (auto &p : typ.getParameters()) {
+    auto type = p.getCppType();
+    type = removeGlobalScopeQualifier(type);
+    auto name = p.getName().str();
+    auto serType = p.isOptional() ? ValueType::OPT : ValueType::REG;
+    if (type.starts_with("llvm::ArrayRef") || type.starts_with("ArrayRef")) {
+      serType = ValueType::VAR;
+      type = removeArray(type);
+    }
+    params.push_back({type, name, serType});
+  }
+  auto serializer = serializeParamsKotlin(params, varName);
+  auto kotlinTypName = normalizeTypeName(typ.getName());
+  addTo.addSwitchCase(kotlinTypName, serializer);
+}
+
+static bool emitTypeSerializerKotlin(const RecordKeeper &records,
+                                     llvm::raw_ostream &os) {
+  const char *const defHedOpen = R"(
+package org.jacodb.impl.cfg.serializer.tblgenerated
+
+import org.jacodb.api.cir.cfg.*
+import org.jacodb.impl.cfg.serializer
+import org.jacodb.impl.grpc.Type)";
+
+  const char *const defHedClose = R"()";
+
+  const char *const structSerializer = R"(
+for ((index, member) in this.members.withIndex()) {
+  pTyp.setMembers(index, member.asProtobuf())
+}
+pTyp.setPacked(this.packed)
+pTyp.setIncomplete(this.incomplete)
+pTyp.setKind(this.kind.asProtobuf())
+pTyp.setName(this.name.asProtobuf()))";
+
+  llvm::StringRef serializedObj = "pTyp";
+
+  auto serClass = KotlinProtoSerializer("MLIRType", "Type", serializedObj.str(),
+                                        defHedOpen, defHedClose);
+
+  auto defs = getDefs(records);
+
+  for (auto &def : defs) {
+    AttrOrTypeDef type(def);
+    aggregateType(type, serializedObj, serClass);
+  }
+  serClass.addSwitchCase("CIRStructType", structSerializer);
+
+  generateKotlinFile(serClass, os);
+
+  return false;
 }
 
 static bool emitTypeKotlin(const RecordKeeper &records, llvm::raw_ostream &os) {
@@ -412,3 +470,8 @@ static mlir::GenRegistration
     genTypeProtoSerializerHeaderTest("gen-type-proto-serializer-header",
                                      "Generate proto serializer .h for types",
                                      &emitTypeProtoSerializerHeader);
+
+static mlir::GenRegistration genTypeKotlinToProtoSerializer(
+    "gen-type-proto-serializer-kotlin",
+    "Generate type proto serializer from kotlin format",
+    &emitTypeSerializerKotlin);

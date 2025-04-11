@@ -17,8 +17,8 @@
 
 namespace vespa {
 
-const CppTypeInfo mlirNaming = {"mlir", "MLIR"};
-const CppTypeInfo cirNaming = {"cir", "CIR"};
+const LangTypeInfo mlirNaming = {"mlir", "MLIR"};
+const LangTypeInfo cirNaming = {"cir", "CIR"};
 
 enum class ValueType {
   REG,
@@ -28,12 +28,25 @@ enum class ValueType {
   EMPTY,
 };
 
+std::string normalizeFieldName(StringRef name);
+
 struct ParamData {
   llvm::StringRef cppType;
   std::string name;
-  std::string deserName;
   ValueType serType;
   std::optional<std::string> customDeserializer = std::nullopt;
+
+  std::string getKotlinField() const {
+    return normalizeFieldName(llvm::convertToCamelFromSnakeCase(name));
+  }
+
+  std::string getDeserName() const {
+    return formatv("{0}Deser", name);
+  }
+
+  std::string getProtoFieldName() const {
+    return llvm::convertToCamelFromSnakeCase(name, true);
+  }
 };
 
 inline constexpr const char *autogenMessage =
@@ -95,10 +108,11 @@ std::string deserializeParameters(llvm::StringRef cppTy,
                                   bool doesNeedCtx = false);
 
 void serializeParamKotlin(const ParamData &p, llvm::StringRef varName,
-                          llvm::raw_ostream &os);
+                          llvm::StringRef kotlinObj, llvm::raw_ostream &os);
 
 std::string serializeParamsKotlin(llvm::ArrayRef<ParamData> ps,
-                                  llvm::StringRef varName);
+                                  llvm::StringRef serializedObj,
+                                  llvm::StringRef kotlinObj = "this");
 
 void checkType(llvm::StringRef typ, llvm::raw_ostream &os);
 
@@ -108,12 +122,17 @@ void buildParameter(mlir::tblgen::AttrOrTypeParameter &p,
                     llvm::StringRef varName, llvm::raw_ostream &os,
                     size_t padding = 8);
 
-void generateCodeFile(llvm::ArrayRef<CppSwitchSource *> sources,
+void generateCodeFile(llvm::ArrayRef<AbstractSwitchSource *> sources,
                       bool disableClang, bool addLicense, bool emitDecl,
                       llvm::raw_ostream &os);
 
-void generateCodeFile(CppSwitchSource &source, bool disableClang,
+void generateCodeFile(AbstractSwitchSource &source, bool disableClang,
                       bool addLicense, bool emitDecl, llvm::raw_ostream &os);
+
+void generateCppFile(CppSwitchSource &source, bool emitDecl,
+                     llvm::raw_ostream &os);
+
+void generateKotlinFile(KotlinProtoSerializer &source, llvm::raw_ostream &os);
 
 } // namespace vespa
 

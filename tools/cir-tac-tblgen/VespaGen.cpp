@@ -1,4 +1,5 @@
 #include "VespaGen.h"
+#include "VespaCommon.h"
 #include "mlir/Support/IndentedOstream.h"
 
 #include "llvm/ADT/ArrayRef.h"
@@ -666,31 +667,32 @@ for (auto j = 0; j < {1}.{3}_size(); j++) {{)";
 }
 
 std::string deserializeEmpty(const ParamData &p) {
-  return formatv("{0} {1};\n", p.cppType, p.deserName);
+  return formatv("{0} {1};\n", p.cppType, p.getDeserName());
 }
 
 void vespa::deserializeParameter(const ParamData &p, llvm::StringRef varName,
                                  llvm::raw_ostream &os) {
   auto name = p.name;
   auto protoField = llvm::convertToSnakeFromCamelCase(name);
+  auto deserName = p.getDeserName();
 
   std::string elDeser;
   switch (p.serType) {
   case ValueType::VAR:
-    elDeser = deserializeArray(p, varName, p.deserName, protoField);
+    elDeser = deserializeArray(p, varName, deserName, protoField);
     break;
   case ValueType::VAROFVAR:
-    elDeser = deserializeVarOfVar(p, varName, p.deserName, protoField);
+    elDeser = deserializeVarOfVar(p, varName, deserName, protoField);
     break;
   case ValueType::OPT:
-    elDeser = deserializeOptional(p, varName, p.deserName, protoField);
+    elDeser = deserializeOptional(p, varName, deserName, protoField);
     break;
   case ValueType::EMPTY:
     elDeser = deserializeEmpty(p);
     break;
   case ValueType::REG:
     auto fieldAccessor = formatv("{0}.{1}()", varName, protoField).str();
-    elDeser = formatv("auto {0} = {1};\n", p.deserName,
+    elDeser = formatv("auto {0} = {1};\n", deserName,
                       deserializeElement(p, fieldAccessor))
                   .str();
     break;
@@ -698,9 +700,11 @@ void vespa::deserializeParameter(const ParamData &p, llvm::StringRef varName,
   os << elDeser;
 }
 
-std::string vespa::deserializeParameters(
-    llvm::StringRef cppTy, llvm::ArrayRef<ParamData> ps,
-    llvm::StringRef varName, const char *finisher, bool doesNeedCtx) {
+std::string vespa::deserializeParameters(llvm::StringRef cppTy,
+                                         llvm::ArrayRef<ParamData> ps,
+                                         llvm::StringRef varName,
+                                         const char *finisher,
+                                         bool doesNeedCtx) {
   std::string serializerRaw;
   llvm::raw_string_ostream os(serializerRaw);
   std::string builderParams;
@@ -725,9 +729,10 @@ std::string vespa::deserializeParameters(
         ((param.name == "real" || param.name == "imag") &&
          param.cppType != "::mlir::Attribute") ||
         (param.cppType == "mlir::TypedAttr"))
-      bp << formatv("mlir::cast<{0}>({1})", param.cppType, param.deserName);
+      bp << formatv("mlir::cast<{0}>({1})", param.cppType,
+                    param.getDeserName());
     else
-      bp << param.deserName;
+      bp << param.getDeserName();
     deserializeParameter(param, varName, os);
     firstParam = false;
   }
@@ -736,37 +741,141 @@ std::string vespa::deserializeParameters(
   return serializerRaw;
 }
 
-std::string serializeElementKotlin(const ParamData &p, llvm::StringRef serObj,
-                                   llvm::StringRef varName) {
-  if (primitiveSerializable.count(p.cppType)) {
-    return formatv("{0}.set{1}({2})", serObj, p.name, varName);
+std::string serializeElementKotlin(const ParamData &p, llvm::StringRef elem) {
+  if (!primitiveSerializable.count(p.cppType)) {
+    return formatv("{0}.asProtobuf()", elem);
+  }
+  return elem.str();
+}
+
+std::string setSerializedToField(llvm::StringRef name, llvm::StringRef serObj,
+                                 llvm::StringRef elem) {
+  auto nameAsProtoField = llvm::convertToCamelFromSnakeCase(name, true);
+  return formatv("{0}.set{1}({2})", serObj, nameAsProtoField, elem);
+}
+
+std::string serializeOptionalKotlin(const ParamData &p, llvm::StringRef serObj,
+                                    llvm::StringRef elem) {
+  const char *const serializer = R"(
+{0} ?.let{
+    {1}
+})";
+
+  auto innerSer = serializeElementKotlin(p, formatv("{0}!!", elem).str());
+  auto setter = setSerializedToField(p.name, serObj, innerSer);
+
+  return formatv(serializer, elem, setter);
+}
+
+std::string serializeArrayKotlin(const ParamData &p, llvm::StringRef serObj,
+                                 llvm::StringRef elem,
+                                 llvm::StringRef field = "") {
+  const char *const serializer = R"(
+for ((index, value) in {2}.withIndex()) {
+    {0}.set{1}(index, {3})
+})";
+
+  auto innerSer = serializeElementKotlin(p, "value");
+  auto nameAsProtoField = field.empty() ? p.getProtoFieldName() : field.str();
+
+  return formatv(serializer, serObj, nameAsProtoField, elem, innerSer);
+}
+
+std::string serializeVarOfVarKotlin(const ParamData &p, llvm::StringRef serObj,
+                                    llvm::StringRef elem) {
+  const char *const serializerStart = R"(
+for ((indexOuter, valueOuter) in {0}.withIndex()) {
+    val outerList = {1}.newBuilder())";
+
+  const char *const serializerEnd = R"(
+    {0}.set{1}(indexOuter, outerList.build())
+})";
+
+  auto typ = p.cppType;
+
+  auto innerSerializer =
+      serializeArrayKotlin(p, "outerList", "valueOuter", "List");
+
+  auto outerVectorType = formatv("listOf<{0}>", typ).str();
+  if (typ == "mlir::Value") {
+    outerVectorType = "Setup.MLIRValueList";
+  } else if (typ == "mlir::Block *") {
+    outerVectorType = "Setup.MLIRTypeIDList";
+  } else {
+    llvm_unreachable("VarOfVar is not implemented for this typ!");
   }
 
+  std::string serializer;
+  llvm::raw_string_ostream rawOs(serializer);
+  mlir::raw_indented_ostream os(rawOs);
+  os << formatv(serializerStart, elem, outerVectorType).str();
+  os << "\n";
+  // silly looking, but otherwise unindent will only set back by 2 spaces, not 4
+  os.indent();
+  os.indent();
+  os.printReindented(innerSerializer);
+  os.unindent();
+  os.unindent();
+  os << formatv(serializerEnd, serObj, p.getProtoFieldName());
+  return serializer;
 }
 
 std::string serializeEmptyKotlin(const ParamData &p) {
-  return formatv("");
+  return formatv("\n// {0} is not used yet", p.name);
 }
 
-void vespa::serializeParamKotlin(const ParamData &p, llvm::StringRef varName,
+void vespa::serializeParamKotlin(const ParamData &p,
+                                 llvm::StringRef serializedObj,
+                                 llvm::StringRef kotlinObj,
                                  llvm::raw_ostream &os) {
+  std::string elSer;
+  std::string _kotlinGetter = formatv("{0}.{1}", kotlinObj, p.getKotlinField());
+  llvm::StringRef kotlinGetter = _kotlinGetter;
   switch (p.serType) {
   case ValueType::EMPTY:
-
+    elSer = serializeEmptyKotlin(p);
+    break;
+  case ValueType::OPT:
+    elSer = serializeOptionalKotlin(p, serializedObj, kotlinGetter);
+    break;
+  case ValueType::VAR:
+    elSer = serializeArrayKotlin(p, serializedObj, kotlinGetter);
+    break;
+  case ValueType::VAROFVAR:
+    elSer = serializeVarOfVarKotlin(p, serializedObj, kotlinGetter);
+    break;
+  case ValueType::REG:
+    auto ser = serializeElementKotlin(p, kotlinGetter);
+    elSer = "\n" + setSerializedToField(p.name, serializedObj, ser);
+    break;
   }
+  os << elSer;
 }
 
 std::string vespa::serializeParamsKotlin(llvm::ArrayRef<ParamData> ps,
-                                         llvm::StringRef varName) {
+                                         llvm::StringRef serializedObj,
+                                         llvm::StringRef kotlinObj) {
   std::string serializer;
   llvm::raw_string_ostream os(serializer);
 
   for (auto &p : ps) {
-    serializeParamKotlin(p, varName, os);
-    os << ",\n";
+    serializeParamKotlin(p, serializedObj, kotlinObj, os);
   }
 
   return serializer;
+}
+
+std::string vespa::normalizeFieldName(StringRef name) {
+  if (name == "val") {
+    return "value";
+  }
+  if (name == "object") {
+    return "obj";
+  }
+  if (name == "method") {
+    return "meth";
+  }
+  return name.str();
 }
 
 void vespa::buildParameter(mlir::tblgen::AttrOrTypeParameter &p,
@@ -794,7 +903,7 @@ void vespa::buildParameter(mlir::tblgen::AttrOrTypeParameter &p,
   }
 }
 
-void vespa::generateCodeFile(llvm::ArrayRef<CppSwitchSource *> sources,
+void vespa::generateCodeFile(llvm::ArrayRef<AbstractSwitchSource *> sources,
                              bool disableClang, bool addLicense, bool emitDecl,
                              llvm::raw_ostream &os) {
   os << autogenMessage;
@@ -814,8 +923,20 @@ void vespa::generateCodeFile(llvm::ArrayRef<CppSwitchSource *> sources,
     os << clangOn;
 }
 
-void vespa::generateCodeFile(CppSwitchSource &source, bool disableClang,
+void vespa::generateCodeFile(AbstractSwitchSource &source, bool disableClang,
                              bool addLicense, bool emitDecl,
                              llvm::raw_ostream &os) {
   generateCodeFile({&source}, disableClang, addLicense, emitDecl, os);
+}
+
+void vespa::generateCppFile(CppSwitchSource &source, bool emitDecl,
+                            llvm::raw_ostream &os) {
+  generateCodeFile(source, /*disableClang=*/true, /*addLicense=*/false,
+                   emitDecl, os);
+}
+
+void vespa::generateKotlinFile(KotlinProtoSerializer &source,
+                               llvm::raw_ostream &os) {
+  generateCodeFile(source, /*disableClang=*/false, /*addLicense=*/true,
+                   /*emitDecl=*/false, os);
 }

@@ -265,7 +265,7 @@ const char *const switchEndDef = R"(
 })";
 
 struct EnumPairing {
-  std::string cppName;
+  std::string langName;
   std::string protoName;
 };
 
@@ -273,10 +273,10 @@ static void
 emitEnumDeserializerMethod(const EnumPairing &name,
                            const llvm::ArrayRef<EnumPairing> &values,
                            const char *protoPrefix, raw_ostream &os) {
-  os << formatv(methodDef, name.protoName, name.cppName, protoPrefix);
+  os << formatv(methodDef, name.protoName, name.langName, protoPrefix);
   for (auto enumerant : values) {
     os << formatv(switchCaseDef, name.protoName, enumerant.protoName,
-                  name.cppName, enumerant.cppName, protoPrefix);
+                  name.langName, enumerant.langName, protoPrefix);
   }
   os << switchEndDef;
 }
@@ -284,35 +284,52 @@ emitEnumDeserializerMethod(const EnumPairing &name,
 static void emitEnumDeserializerMethodWithNamespace(
     const EnumPairing &name, const llvm::ArrayRef<EnumPairing> &values,
     const char *protoPrefix, raw_ostream &os) {
-  os << formatv(methodDef, name.protoName, name.cppName, protoPrefix);
+  os << formatv(methodDef, name.protoName, name.langName, protoPrefix);
   for (auto enumerant : values) {
     os << formatv(switchCaseDefWithNamespace, name.protoName,
-                  enumerant.protoName, name.cppName, enumerant.cppName,
+                  enumerant.protoName, name.langName, enumerant.langName,
                   protoPrefix);
   }
   os << switchEndDef;
 }
 
+static void normalizeEnumerants(std::vector<EnumAttrCase> &enumerants,
+                                std::vector<std::string> &result) {
+  for (auto &enumerant : enumerants) {
+    result.push_back(enumerant.getSymbol().str());
+  }
+}
+
+static void createCppEnumerants(std::vector<EnumAttrCase> &enumerants,
+                                std::vector<EnumPairing> &result) {
+  std::vector<std::string> enumNames;
+  normalizeEnumerants(enumerants, enumNames);
+  for (auto &enumerant : enumNames) {
+    auto enumerantCpp = llvm::convertToCamelFromSnakeCase(enumerant, true);
+    result.push_back({enumerantCpp, enumerant});
+  }
+}
+
+const EnumPairing recordKindName = {"cir::StructType::RecordKind",
+                                    "RecordKind"};
+
+const std::vector<EnumPairing> recordKindValues = {
+    {"Class", "Class"},
+    {"Union", "Union"},
+    {"Struct", "Struct"},
+};
+
+const EnumPairing signedlessName = {"mlir::IntegerType::SignednessSemantics",
+                                    "SignednessSemantics"};
+
+const std::vector<EnumPairing> signedlessValues = {
+    {"Signless", "Signless"},
+    {"Signed", "Signed"},
+    {"Unsigned", "Unsigned"},
+};
+
 static bool emitEnumProtoDeserializerSource(const RecordKeeper &records,
                                             raw_ostream &os) {
-  const EnumPairing recordKindName = {"cir::StructType::RecordKind",
-                                      "RecordKind"};
-
-  const std::vector<EnumPairing> recordKindValues = {
-      {"Class", "Class"},
-      {"Union", "Union"},
-      {"Struct", "Struct"},
-  };
-
-  const EnumPairing signedlessName = {"mlir::IntegerType::SignednessSemantics",
-                                      "SignednessSemantics"};
-
-  const std::vector<EnumPairing> signedlessValues = {
-      {"Signless", "Signless"},
-      {"Signed", "Signed"},
-      {"Unsigned", "Unsigned"},
-  };
-
   os << autogenMessage;
   os << clangOff;
   os << defHeader;
@@ -324,11 +341,8 @@ static bool emitEnumProtoDeserializerSource(const RecordKeeper &records,
     auto enumName = normalizeName(enumAttr.getEnumClassName());
     auto enumCppName = getEnumCppName(enumAttr);
     std::vector<EnumPairing> enumerants;
-    for (auto &enumerant : enumAttr.getAllCases()) {
-      auto enumerantName =
-          llvm::convertToCamelFromSnakeCase(enumerant.getSymbol(), true);
-      enumerants.push_back({enumerant.getSymbol().str(), enumerantName});
-    }
+    auto enumCases = enumAttr.getAllCases();
+    createCppEnumerants(enumCases, enumerants);
     emitEnumDeserializerMethod({enumCppName, enumName}, enumerants, "CIR", os);
   }
 
@@ -339,6 +353,65 @@ static bool emitEnumProtoDeserializerSource(const RecordKeeper &records,
 
   os << "\n";
   os << clangOn;
+
+  return false;
+}
+
+static void emitEnumSerializerKotlinMethod(
+    llvm::StringRef enumName, llvm::StringRef enumNamespace,
+    const llvm::ArrayRef<EnumPairing> &values, llvm::raw_ostream &os,
+    bool addNamespaceToValues = false) {
+  const char *const switchCaseNoNamespace = R"(
+    {0}{1}.{2} -> Enum.{0}{1}.{1}_{2})";
+
+  const char *const switchCaseWithNamespace = R"(
+    {0}{1}.{2} -> Enum.{0}{1}.{0}{1}_{2})";
+
+  auto switchCase =
+      addNamespaceToValues ? switchCaseWithNamespace : switchCaseNoNamespace;
+
+  const char *const methodStart = R"(
+fun {0}{1}.asProtobuf() = when (this) {{)";
+
+  const char *const methodEnd = R"(
+    else -> error("Unrecognized Enum element of {0}{1}!")
+})";
+
+  os << "\n";
+  os << formatv(methodStart, enumNamespace, enumName);
+  for (auto &v : values) {
+    os << formatv(switchCase, enumNamespace, enumName, v.langName);
+  }
+  os << formatv(methodEnd, enumNamespace, enumName);
+}
+
+static bool emitEnumSerializerKotlin(const RecordKeeper &records,
+                                     raw_ostream &os) {
+  const char *const header = R"(
+package org.jacodb.impl.cfg.serializer.tblgenerated
+
+import org.jacodb.api.cir.cfg.*
+import org.jacodb.impl.grpc.Enum)";
+
+  os << autogenMessage;
+  os << jacoDBLicense;
+  os << header;
+
+  auto defs = records.getAllDerivedDefinitionsIfDefined("EnumAttrInfo");
+
+  for (auto &def : defs) {
+    EnumAttr enumAttr(def);
+    auto enumName = normalizeName(enumAttr.getEnumClassName());
+    std::vector<EnumPairing> enumerants;
+    auto enumCases = enumAttr.getAllCases();
+    createCppEnumerants(enumCases, enumerants);
+    emitEnumSerializerKotlinMethod(enumName, "CIR", enumerants, os);
+  }
+
+  emitEnumSerializerKotlinMethod(recordKindName.protoName, "CIR",
+                                 recordKindValues, os, true);
+  emitEnumSerializerKotlinMethod(signedlessName.protoName, "MLIR",
+                                 signedlessValues, os, true);
 
   return false;
 }
@@ -472,3 +545,8 @@ static mlir::GenRegistration
     genEnumProtoDeserializerSource("gen-enum-proto-deserializer-source",
                                    "Generate proto deserializer .cpp for enums",
                                    &emitEnumProtoDeserializerSource);
+
+static mlir::GenRegistration genTypeKotlinToProtoSerializer(
+    "gen-enum-proto-serializer-kotlin",
+    "Generate enum proto serializer from kotlin format",
+    &emitEnumSerializerKotlin);

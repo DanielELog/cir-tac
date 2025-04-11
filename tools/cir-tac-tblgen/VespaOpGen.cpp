@@ -676,7 +676,6 @@ static void prepareOpAttribute(std::vector<ParamData> &data,
   }
 
   const auto &attrName = llvm::convertToSnakeFromCamelCase(operand.name);
-  auto deserName = formatv("{0}Deser", attrName).str();
   auto fixCppType = fixPrefix(attr.getStorageType().str());
   if (fixCppType == "CIRTLS_ModelAttr") {
     fixCppType = "CIRTLSModelAttr";
@@ -686,7 +685,7 @@ static void prepareOpAttribute(std::vector<ParamData> &data,
 
   // ast attributes are not serialized at the moment
   if (attr.getStorageType().starts_with("::cir::AST")) {
-    data.push_back({paramCppType, attrName, deserName, ValueType::EMPTY});
+    data.push_back({paramCppType, attrName, ValueType::EMPTY});
     return;
   }
 
@@ -696,11 +695,11 @@ static void prepareOpAttribute(std::vector<ParamData> &data,
     auto enumDeserializer = "EnumDeserializer::deserialize" +
                             llvm::StringRef(fixCppType).drop_back(4).str();
     data.push_back(
-        {paramCppType, attrName, deserName, serType,
+        {paramCppType, attrName, serType,
          (paramCppType + "::get(&mInfo.ctx, " + enumDeserializer + "($$))")
              .str()});
   } else {
-    data.push_back({paramCppType, attrName, deserName, serType});
+    data.push_back({paramCppType, attrName, serType});
   }
 }
 
@@ -708,7 +707,6 @@ static void prepareOpOperand(std::vector<ParamData> &data,
                              const NamedTypeConstraint &operand,
                              llvm::StringRef paramCppType) {
   auto paramName = operand.name.str();
-  auto deserName = formatv("{0}Deser", paramName).str();
   ValueType serType;
   if (operand.isOptional()) {
     serType = ValueType::OPT;
@@ -719,7 +717,7 @@ static void prepareOpOperand(std::vector<ParamData> &data,
   } else {
     serType = ValueType::REG;
   }
-  data.push_back({paramCppType, paramName, deserName, serType});
+  data.push_back({paramCppType, paramName, serType});
 }
 
 static void prepareParameters(std::vector<ParamData> &data,
@@ -747,46 +745,20 @@ static void prepareParameters(std::vector<ParamData> &data,
   for (unsigned i = 0; i != op.getNumSuccessors(); ++i) {
     const NamedSuccessor &successor = op.getSuccessor(i);
     auto paramName = successor.name.str();
-    auto deserName = formatv("{0}Deser", paramName);
     llvm::StringRef paramCppType = "mlir::Block *";
     auto serType = successor.isVariadic() ? ValueType::VAR : ValueType::REG;
 
-    data.push_back({paramCppType, paramName, deserName, serType});
-  }
-}
-
-static bool checker(const RecordKeeper &records, llvm::raw_ostream &os) {
-  auto defs = getRequestedOpDefinitions(records);
-  checkType("mlir::Block *", os);
-  checkType("mlir::Value", os);
-  for (auto *def : defs) {
-    Operator op(def);
-
-    auto resultsAndOperands = op.getNumResults() + op.getNumOperands();
-    for (int i = 0; i != resultsAndOperands; ++i) {
-      auto operandArg = op.getArgToOperandOrAttribute(i);
-      auto operandKind = operandArg.kind();
-      auto operandId = operandArg.operandOrAttributeIndex();
-      switch (operandKind) {
-      case mlir::tblgen::Operator::OperandOrAttribute::Kind::Operand:
-        break;
-      case mlir::tblgen::Operator::OperandOrAttribute::Kind::Attribute:
-        checkType(removeGlobalScopeQualifier(
-                      op.getAttribute(operandId).attr.getStorageType()),
-                  os);
-        break;
-      }
-    }
+    data.push_back({paramCppType, paramName, serType});
   }
 }
 
 static void aggregateOperation(const Operator &op,
-                               const CppTypeInfo &cppNamespace,
+                               const LangTypeInfo &cppNamespace,
                                const std::string &varName,
                                CppProtoDeserializer &addTo) {
   auto name = normalizeName(op.getCppClassName());
   auto cppName =
-      formatv("{0}::{1}", cppNamespace.factualType, op.getCppClassName()).str();
+      formatv("{0}::{1}", cppNamespace.langType, op.getCppClassName()).str();
 
   std::vector<ParamData> params;
   prepareParameters(params, op);
@@ -803,9 +775,8 @@ static void aggregateOperation(const Operator &op,
           : "return mInfo.builder.create<{0}>(mInfo.builder.getUnknownLoc(), "
             "{1});";
 
-  auto deserializer =
-      deserializeParameters(name, cppName, params, varName, builder);
-  addTo.addStandardCase(cppName, cppNamespace.namedType, name, deserializer);
+  auto deserializer = deserializeParameters(cppName, params, varName, builder);
+  addTo.addStandardCase(cppName, cppNamespace.protoType, name, deserializer);
 }
 
 static bool emitOpProtoDeserializer(const RecordKeeper &records,
@@ -863,17 +834,72 @@ namespace protocir {
   return false;
 }
 
-static std::string normalizeFieldName(StringRef name) {
-  if (name == "val") {
-    return "value";
+static void aggregateOperationKotlin(const Operator &op,
+                                     llvm::StringRef varName,
+                                     llvm::StringRef opKind,
+                                     KotlinProtoSerializer &addTo) {
+  std::vector<ParamData> params;
+  prepareParameters(params, op);
+  auto serializer = serializeParamsKotlin(params, varName);
+  auto name = normalizeName(op.getCppClassName());
+  auto koltinTypName = formatv("CIR{0}{1}", name, opKind);
+  auto protoTypName = formatv("CIR{0}", name);
+  addTo.addSwitchCase(koltinTypName, protoTypName, serializer);
+}
+
+static bool emitOpSerializerKotlin(const std::vector<Operator> &records,
+                                   raw_ostream &os, llvm::StringRef opKind) {
+  const char *const defHedOpen = R"(
+package org.jacodb.impl.cfg.serializer.tblgenerated
+
+import org.jacodb.api.cir.cfg.*
+import org.jacodb.impl.cfg.serializer
+import org.jacodb.impl.grpc.Op
+import org.jacodb.impl.grpc.Setup)";
+
+  const char *const defHedClose = R"()";
+
+  llvm::StringRef serializedObj = "pOp";
+
+  auto serClass = KotlinProtoSerializer("MLIROp", "Op", serializedObj.str(),
+                                        defHedOpen, defHedClose);
+  auto className = formatv("CIR{0}", opKind).str();
+  serClass.setClassName(className);
+  serClass.setDropNamespace(true);
+
+  for (auto &op : records) {
+    aggregateOperationKotlin(op, serializedObj, opKind, serClass);
   }
-  if (name == "object") {
-    return "obj";
+
+  generateKotlinFile(serClass, os);
+
+  return false;
+}
+
+static bool emitExprSerializerKotlin(const RecordKeeper &records,
+                                     raw_ostream &os) {
+  std::vector<Operator> exprs;
+  auto defs = getRequestedOpDefinitions(records);
+  for (auto *def : defs) {
+    Operator op(def);
+    if (expressionOps.count(op.getCppClassName())) {
+      exprs.push_back(op);
+    }
   }
-  if (name == "method") {
-    return "meth";
+  return emitOpSerializerKotlin(exprs, os, "Expr");
+}
+
+static bool emitInstSerializerKotlin(const RecordKeeper &records,
+                                     raw_ostream &os) {
+  std::vector<Operator> insts;
+  auto defs = getRequestedOpDefinitions(records);
+  for (auto *def : defs) {
+    Operator op(def);
+    if (instructionOps.count(op.getCppClassName())) {
+      insts.push_back(op);
+    }
   }
-  return name.str();
+  return emitOpSerializerKotlin(insts, os, "Inst");
 }
 
 static std::string normalizeGetter(StringRef name) {
@@ -903,7 +929,8 @@ static bool emitOpKotlinExprs(const RecordKeeper &records, raw_ostream &os) {
       os << formatv("data class CIR{0}Expr(\n", name);
       for (int i = 0; i != op.getNumOperands(); ++i) {
         const auto &operand = op.getOperand(i);
-        auto name = normalizeFieldName(operand.name);
+        auto name =
+            normalizeFieldName(llvm::convertToCamelFromSnakeCase(operand.name));
         if (operand.isOptional()) {
           os << formatv("    val {0}: MLIRValue?,\n", name);
         } else if (operand.isVariadicOfVariadic()) {
@@ -999,7 +1026,8 @@ static bool emitOpKotlinInst(const RecordKeeper &records, raw_ostream &os) {
       os << "\n";
       for (int i = 0; i != op.getNumOperands(); ++i) {
         const auto &operand = op.getOperand(i);
-        auto name = normalizeFieldName(operand.name);
+        auto name =
+            normalizeFieldName(llvm::convertToCamelFromSnakeCase(operand.name));
         if (operand.isOptional()) {
           os << formatv("    val {0}: MLIRValue?,\n", name);
         } else if (operand.isVariadicOfVariadic()) {
@@ -1381,6 +1409,12 @@ static mlir::GenRegistration
                                  "Generate proto deserializer .cpp for ops",
                                  &emitOpProtoDeserializerSource);
 
-static mlir::GenRegistration
-    genOpProtoChecker("gen-op-proto-check-types",
-                      "Check types are correctly matched", &checker);
+static mlir::GenRegistration genExprKotlinToProtoSerializer(
+    "gen-expr-proto-serializer-kotlin",
+    "Generate op expression proto serializer from kotlin format",
+    &emitExprSerializerKotlin);
+
+static mlir::GenRegistration genInstKotlinToProtoSerializer(
+    "gen-inst-proto-serializer-kotlin",
+    "Generate op instruction proto serializer from kotlin format",
+    &emitInstSerializerKotlin);

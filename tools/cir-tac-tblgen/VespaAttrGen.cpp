@@ -907,7 +907,6 @@ static void prepareParameters(std::vector<ParamData> &data,
     }
     auto paramName = param.getName().str();
     auto paramCppType = removeGlobalScopeQualifier(param.getCppType());
-    auto deserName = formatv("{0}Deser", paramName).str();
     auto valueType = param.isOptional() ? ValueType::OPT : ValueType::REG;
 
     // This is actually optional although not stated so in the .td file
@@ -919,42 +918,41 @@ static void prepareParameters(std::vector<ParamData> &data,
       paramCppType = removeArray(paramCppType);
     }
 
-    data.push_back({paramCppType, paramName, deserName, valueType});
+    data.push_back({paramCppType, paramName, valueType});
   }
 }
 
-inline static void aggregateAttribute(const AttrDef &def,
-                                      const CppTypeInfo &cppNamespace,
-                                      const std::string &varName,
-                                      CppProtoDeserializer &addTo,
-                                      bool addAsCase = true) {
+static void aggregateAttribute(const AttrDef &def,
+                               const LangTypeInfo &cppNamespace,
+                               const std::string &varName,
+                               CppProtoDeserializer &addTo,
+                               bool addAsCase = true) {
   auto name = normalizeName(def.getName());
-  std::string cppName =
-      formatv("{0}::{1}", cppNamespace.factualType, name).str();
+  std::string cppName = formatv("{0}::{1}", cppNamespace.langType, name).str();
   std::vector<ParamData> params;
   prepareParameters(params, def);
   const auto *builder = "return {0}::get({1});";
-  auto deserializer = deserializeParameters(name, cppName, params, varName,
-                                            builder, doesNeedCtx(name));
-  auto protoName = formatv("{0}{1}", cppNamespace.namedType, name);
+  auto deserializer = deserializeParameters(cppName, params, varName, builder,
+                                            doesNeedCtx(name));
+  auto protoName = formatv("{0}{1}", cppNamespace.protoType, name);
   if (addAsCase)
-    addTo.addStandardCase(cppName, cppNamespace.namedType, name, deserializer);
+    addTo.addStandardCase(cppName, cppNamespace.protoType, name, deserializer);
   else
     addTo.addHelperMethod(formatv("deserialize{0}", protoName),
                           {MethodParameter(protoName, varName)}, cppName,
                           deserializer);
 }
 
-inline static void aggregateEnumAttr(const EnumAttr &def,
-                                     const CppTypeInfo &cppNamespace,
-                                     const std::string &varName,
-                                     CppProtoDeserializer &addTo) {
+static void aggregateEnumAttr(const EnumAttr &def,
+                              const LangTypeInfo &cppNamespace,
+                              const std::string &varName,
+                              CppProtoDeserializer &addTo) {
   auto name = normalizeEnumName(def.getEnumClassName());
   auto cppName = name;
   if (name == "TLSModelAttr") {
     cppName = "TLS_ModelAttr";
   }
-  cppName = formatv("{0}::{1}", cppNamespace.factualType, cppName).str();
+  cppName = formatv("{0}::{1}", cppNamespace.langType, cppName).str();
   auto nameSnake = llvm::convertToSnakeFromCamelCase(name);
 
   const char *const enumDeserializerFmt = R"(
@@ -962,10 +960,10 @@ auto enumDeser = EnumDeserializer::deserialize{0}{1}({2}.value());
 return {3}::get(&mInfo.ctx, enumDeser);)";
 
   auto deserializer =
-      formatv(enumDeserializerFmt, cppNamespace.namedType,
+      formatv(enumDeserializerFmt, cppNamespace.protoType,
               llvm::StringRef(name).drop_back(4), varName, cppName);
 
-  addTo.addStandardCase(cppName, cppNamespace.namedType, name, deserializer);
+  addTo.addStandardCase(cppName, cppNamespace.protoType, name, deserializer);
 }
 
 static bool emitAttrProtoDeserializer(const RecordKeeper &records,
@@ -1074,7 +1072,7 @@ switch (pAttr.location_case()) {
   // access to it, but is not actually present in the MLIRAttribute switch
   // function
   deserClass.addHelperMethod("deserializeMLIRNamedAttr",
-                             MethodParameter("MLIRNamedAttr", "pAttr"),
+                             MethodParameter("MLIRNamedAttr", varName),
                              "mlir::NamedAttribute", namedAttrDeserializer);
   deserClass.addStandardCase("mlir::FlatSymbolRefAttr", "MLIR",
                              "FlatSymbolRefAttr", flatSymbolDeserializer);
@@ -1103,8 +1101,7 @@ switch (pAttr.location_case()) {
     aggregateEnumAttr(attr, cirNaming, varName, deserClass);
   }
 
-  generateCodeFile({&deserClass}, /*disableClang=*/true, /*addLicense=*/false,
-                   emitDecl, os);
+  generateCppFile(deserClass, emitDecl, os);
 
   return false;
 }
@@ -1117,6 +1114,136 @@ static bool emitAttrProtoDeserializerSource(const RecordKeeper &records,
 static bool emitAttrProtoDeserializerHeader(const RecordKeeper &records,
                                             llvm::raw_ostream &os) {
   return emitAttrProtoDeserializer(records, os, /*emitDecl=*/true);
+}
+
+static void
+addLocationSwitchFuncKotlin(const llvm::ArrayRef<const Record *> &records,
+                            llvm::StringRef serializedObj,
+                            KotlinProtoSerializer &addTo) {
+  const char *const switchStart = R"(
+    when (this) {)";
+
+  const char *const switchCase = R"(
+        is {3}{0} -> {1}.set{2}(this.asProtobuf()))";
+
+  const char *const switchEnd = R"(
+        else -> error("Unrecognized type of MLIRLocation!")
+    })";
+
+  const char *const locNamespace = "MLIR";
+
+  std::string switchBody;
+  llvm::raw_string_ostream os(switchBody);
+  os << switchStart;
+  for (auto &def : records) {
+    AttrDef attr(def);
+    auto name = normalizeName(attr.getName());
+    auto snakeName = llvm::convertToSnakeFromCamelCase(name);
+    auto casePtotoTypeAsField =
+        llvm::convertToCamelFromSnakeCase(snakeName, true);
+    os << formatv(switchCase, name, serializedObj, casePtotoTypeAsField,
+                  locNamespace);
+  }
+  os << switchEnd;
+
+  addTo.addHelperMethod("MLIRLocation", switchBody);
+}
+
+static void aggregateAttributeKotlin(const AttrDef &def,
+                                     llvm::StringRef varName,
+                                     llvm::StringRef typNamespace,
+                                     KotlinProtoSerializer &addTo,
+                                     bool addAsCase = true) {
+  std::vector<ParamData> params;
+  prepareParameters(params, def);
+  auto serializer = serializeParamsKotlin(params, varName);
+  auto kotlinTypName =
+      formatv("{0}{1}", typNamespace, normalizeName(def.getName()));
+  if (addAsCase)
+    addTo.addSwitchCase(kotlinTypName, serializer);
+  else
+    addTo.addHelperMethod(kotlinTypName, serializer);
+}
+
+static void aggregateEnumAttrKotlin(const EnumAttr &def,
+                                    llvm::StringRef varName,
+                                    llvm::StringRef typNamespace,
+                                    KotlinProtoSerializer &addTo) {
+  const char *const enumAttrSerializer = R"(
+    {0}.setValue(this.value.asProtobuf()))";
+
+  auto serializer = formatv(enumAttrSerializer, varName);
+  auto kotlinTyp = formatv("{0}{1}", typNamespace,
+                           normalizeEnumName(def.getEnumClassName()));
+
+  addTo.addSwitchCase(kotlinTyp, serializer);
+}
+
+static bool emitAttrSerializerKotlin(const RecordKeeper &records,
+                                     llvm::raw_ostream &os) {
+  const char *const defHedOpen = R"(
+package org.jacodb.impl.cfg.serializer.tblgenerated
+
+import org.jacodb.api.cir.cfg.*
+import org.jacodb.impl.cfg.serializer
+import org.jacodb.impl.grpc.Attr)";
+
+  const char *const defHedClose = R"()";
+
+  const char *const namedAttrSerializer = R"(
+pAttr.setName(this.name.asProtobuf())
+pAttr.setValue(this.value.asProtobuf()))";
+
+  const char *const flatSymbolSerializer = R"(
+pAttr.setRootReference(this.rootReference.asProtobuf()))";
+
+  const char *const denseArraySerializer = R"(
+pAttr.setSize(this.size)
+for ((index, value) in this.rawData.withIndex()) {
+    pAttr.setRawData(index, value)
+})";
+
+  llvm::StringRef serializedObj = "pAttr";
+
+  auto serClass = KotlinProtoSerializer(
+      "MLIRAttribute", "Attr", serializedObj.str(), defHedOpen, defHedClose);
+
+  auto mlirDefs = records.getAllDerivedDefinitionsIfDefined("Builtin_Attr");
+  auto mlirLocationDefs =
+      records.getAllDerivedDefinitionsIfDefined("Builtin_LocationAttr");
+  auto cirDefs = records.getAllDerivedDefinitionsIfDefined("CIR_Attr");
+  auto cirEnumDefs = records.getAllDerivedDefinitionsIfDefined("EnumAttrInfo");
+
+  for (auto *def : mlirDefs) {
+    AttrDef attr(def);
+    auto name = normalizeName(attr.getName());
+    if (mlirAttributeWhitelist.count(name)) {
+      aggregateAttributeKotlin(attr, serializedObj, "MLIR", serClass);
+    }
+  }
+  serClass.addHelperMethod("MLIRNamedAttr", namedAttrSerializer);
+  serClass.addSwitchCase("MLIRFlatSymbolRefAttr", flatSymbolSerializer);
+  serClass.addSwitchCase("MLIRDenseI32ArrayAttr", denseArraySerializer);
+  addLocationSwitchFuncKotlin(mlirLocationDefs, serializedObj, serClass);
+  for (auto *def : mlirLocationDefs) {
+    AttrDef attr(def);
+    aggregateAttributeKotlin(attr, serializedObj, "MLIR", serClass, false);
+  }
+  for (auto *def : cirDefs) {
+    AttrDef attr(def);
+    if (attr.getName().starts_with("AST")) {
+      continue;
+    }
+    aggregateAttributeKotlin(attr, serializedObj, "CIR", serClass);
+  }
+  for (auto *def : cirEnumDefs) {
+    EnumAttr attr(def);
+    aggregateEnumAttrKotlin(attr, serializedObj, "CIR", serClass);
+  }
+
+  generateKotlinFile(serClass, os);
+
+  return false;
 }
 
 static mlir::GenRegistration genAttrProto("gen-attr-proto",
@@ -1151,3 +1278,8 @@ static mlir::GenRegistration
     getAttrKotlinBuilder("gen-attr-kotlin-builder",
                          "Generate kotlin builder for attributes",
                          &emitAttrKotlinBuilder);
+
+static mlir::GenRegistration genAttrKotlinToProtoSerializer(
+    "gen-attr-proto-serializer-kotlin",
+    "Generate attr proto serializer from kotlin format",
+    &emitAttrSerializerKotlin);
