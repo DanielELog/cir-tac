@@ -2,6 +2,7 @@
 #ifndef MLIR_TOOLS_MLIRTBLGEN_VESPACOMMON_H_
 #define MLIR_TOOLS_MLIRTBLGEN_VESPACOMMON_H_
 
+#include "llvm/ADT/StringRef.h"
 #include <utility>
 
 #include <llvm/ADT/ArrayRef.h>
@@ -36,27 +37,26 @@ struct HeaderInfo {
   HeaderInfo(std::string open, std::string close) : open(open), close(close) {}
 };
 
-struct CppTypeInfo {
-  std::string factualType;
-  std::string namedType;
+struct LangTypeInfo {
+  std::string langType;
+  std::string protoType;
 };
 
 struct SwitchCase {
-  std::string cppType;
+  std::string langType;
   std::string protoType;
   std::string caseValue;
   std::string caseBody;
   std::string translatorBody;
 };
 
-class CppSwitchSource {
+class AbstractSwitchSource {
 protected:
   std::string funcName;
   std::string className;
   std::vector<SwitchCase> cases;
-  std::vector<PrivateField> fields;
 
-  CppTypeInfo resTy;
+  LangTypeInfo resTy;
 
   std::string inputName;
   std::string serName;
@@ -67,7 +67,54 @@ protected:
   std::optional<std::string> preCaseBody;
   std::optional<std::string> postCaseBody;
 
+  virtual void genClassDecl(llvm::raw_ostream &os) = 0;
+
+  virtual void genClassDef(llvm::raw_ostream &os) = 0;
+
+  void printCodeBlock(raw_indented_ostream &os, llvm::StringRef code,
+                      int indent = 2);
+
+  void addCase(SwitchCase c) { cases.push_back(c); }
+
+  void addCase(std::string lang, std::string proto, std::string val,
+               std::string body, std::string translator) {
+    addCase({lang, proto, val, body, translator});
+  }
+
+  AbstractSwitchSource(std::string funcName, std::string className,
+                       LangTypeInfo ret, std::string inputName,
+                       std::string declHedOpen, std::string declHedClose,
+                       std::string defHedOpen, std::string defHedClose)
+      : funcName(funcName), className(className), resTy(ret),
+        inputName(inputName), declHeader(declHedOpen, declHedClose),
+        defHeader(defHedOpen, defHedClose) {}
+
+public:
+  void addPreCaseBody(std::string body) { preCaseBody = body; }
+
+  void addPostCaseBody(std::string body) { postCaseBody = body; }
+
+  void dumpDecl(llvm::raw_ostream &os) {
+    os << declHeader.open << "\n";
+    genClassDecl(os);
+    os << declHeader.close;
+  }
+
+  void dumpDef(llvm::raw_ostream &os) {
+    os << defHeader.open << "\n";
+    genClassDef(os);
+    os << defHeader.close;
+  }
+
+  virtual ~AbstractSwitchSource() = default;
+};
+
+class CppSwitchSource : public AbstractSwitchSource {
+protected:
   Class internalClass;
+  std::vector<PrivateField> fields;
+
+  void addField(PrivateField f) { fields.push_back(f); }
 
   virtual void dumpSwitchFunc(raw_indented_ostream &os) = 0;
 
@@ -78,28 +125,27 @@ protected:
                                       std::string cppType,
                                       std::string methodName) = 0;
 
-  void printCodeBlock(raw_indented_ostream &os, std::string code);
-
   void genCtr();
 
   void genClass();
 
-  void addField(PrivateField f) { fields.push_back(f); }
-
-  void addCase(SwitchCase c) { cases.push_back(c); }
-
-  void addCase(std::string cpp, std::string proto, std::string val,
-               std::string body, std::string translator) {
-    addCase({cpp, proto, val, body, translator});
+  virtual void genClassDecl(llvm::raw_ostream &os) override {
+    genClass();
+    internalClass.writeDeclTo(os);
   }
 
-  CppSwitchSource(std::string funcName, std::string className, CppTypeInfo ret,
+  virtual void genClassDef(llvm::raw_ostream &os) override {
+    genClass();
+    internalClass.writeDefTo(os);
+  }
+
+  CppSwitchSource(std::string funcName, std::string className, LangTypeInfo ret,
                   std::string inputName, std::string declHedOpen,
                   std::string declHedClose, std::string defHedOpen,
                   std::string defHedClose)
-      : funcName(funcName), className(className), resTy(ret),
-        inputName(inputName), declHeader(declHedOpen, declHedClose),
-        defHeader(defHedOpen, defHedClose), internalClass(className) {
+      : AbstractSwitchSource(funcName, className, ret, inputName, declHedOpen,
+                             declHedClose, defHedOpen, defHedClose),
+        internalClass(className) {
     serName = convertToCamelFromSnakeCase(formatv("p_{0}", inputName).str());
   }
 
@@ -111,10 +157,6 @@ public:
   void addField(std::string typ, std::string name) {
     fields.push_back({typ, name, name, /*isCtrParam=*/true});
   }
-
-  void addPreCaseBody(std::string body) { preCaseBody = body; }
-
-  void addPostCaseBody(std::string body) { postCaseBody = body; }
 
   void addHelperMethod(std::string methodName,
                        llvm::ArrayRef<MethodParameter> params,
@@ -128,24 +170,6 @@ public:
     llvm::SmallVector<MethodParameter, 1> singleParam{std::move(param)};
     addHelperMethod(methodName, singleParam, returnType, methodBody);
   }
-
-  void dumpDecl(llvm::raw_ostream &os) {
-    os << declHeader.open << "\n";
-    genClass();
-    internalClass.finalize();
-    internalClass.writeDeclTo(os);
-    os << declHeader.close;
-  }
-
-  void dumpDef(llvm::raw_ostream &os) {
-    os << defHeader.open << "\n";
-    genClass();
-    internalClass.finalize();
-    internalClass.writeDefTo(os);
-    os << defHeader.close;
-  }
-
-  virtual ~CppSwitchSource() = default;
 };
 
 class CppProtoSerializer : public CppSwitchSource {
@@ -162,7 +186,7 @@ private:
   }
 
 public:
-  CppProtoSerializer(std::string className, CppTypeInfo ret,
+  CppProtoSerializer(std::string className, LangTypeInfo ret,
                      std::string inputName, std::string declHedOpen,
                      std::string declHedClose, std::string defHedOpen,
                      std::string defHedClose)
@@ -201,7 +225,7 @@ private:
 public:
   void setStandardCaseBody(const char *newBody) { standardCaseBody = newBody; }
 
-  CppProtoDeserializer(std::string className, CppTypeInfo ret,
+  CppProtoDeserializer(std::string className, LangTypeInfo ret,
                        std::string switchParam, std::string inputName,
                        std::string declHedOpen, std::string declHedClose,
                        std::string defHedOpen, std::string defHedClose,
@@ -231,9 +255,60 @@ public:
     // converting first to snake and then to camel imitates this behaviour
     auto protoName = llvm::convertToCamelFromSnakeCase(snakeName, true);
     auto caseValue =
-        formatv("{0}::{1}Case::k{2}", resTy.namedType, switchParam, protoName)
+        formatv("{0}::{1}Case::k{2}", resTy.protoType, switchParam, protoName)
             .str();
     addCase(typ, typName, caseValue, caseBody, translator);
+  }
+};
+
+struct KotlinHelperMethod {
+  std::string typ;
+  std::string body;
+};
+
+class KotlinProtoSerializer : public AbstractSwitchSource {
+protected:
+  std::string serName;
+  std::string subName;
+
+  std::vector<KotlinHelperMethod> helpers;
+
+  bool dropNamespace = false;
+
+  void dumpSwitchFunc(llvm::raw_ostream &os);
+  void dumpCaseFunc(llvm::raw_ostream &os, llvm::StringRef typ,
+                    llvm::StringRef body, llvm::StringRef protoTyp = "");
+
+  void genClassDecl(llvm::raw_ostream &os) override {
+    os << R"(// Kotlin does not have Declaration source files\n)";
+  }
+
+  void genClassDef(llvm::raw_ostream &os) override;
+  std::string getNeededTypeName(llvm::StringRef rawName);
+
+public:
+  KotlinProtoSerializer(std::string typName, std::string subName,
+                        std::string serName, std::string defHedOpen,
+                        std::string defHedClose)
+      : AbstractSwitchSource("asProtobuf", typName, {typName, typName}, "this",
+                             "", "", defHedOpen, defHedClose),
+        serName(serName), subName(subName) {}
+
+  void addSwitchCase(std::string langTyp, std::string translator) {
+    addCase(langTyp, langTyp, "", "", translator);
+  }
+
+  void addSwitchCase(std::string langTyp, std::string protoTyp,
+                     std::string translator) {
+    addCase(langTyp, protoTyp, "", "", translator);
+  }
+
+  void setDropNamespace(bool newValue) { dropNamespace = newValue; }
+
+  void setClassName(llvm::StringRef newName) { className = newName; }
+
+  void addHelperMethod(std::string langTyp, std::string body) {
+    helpers.push_back({langTyp, body});
   }
 };
 

@@ -1,24 +1,26 @@
 #include "VespaCommon.h"
+
 #include "mlir/TableGen/Class.h"
 #include "llvm/ADT/SmallVector.h"
+#include "llvm/ADT/StringRef.h"
 
 using namespace vespa;
 
-void CppSwitchSource::printCodeBlock(raw_indented_ostream &os,
-                                     std::string code) {
-  os.indent();
+void AbstractSwitchSource::printCodeBlock(raw_indented_ostream &os,
+                                          llvm::StringRef code, int indent) {
+  os.indent(indent);
   os.printReindented(code);
   os.unindent();
 }
 
 void CppProtoSerializer::dumpSwitchFunc(raw_indented_ostream &os) {
   raw_indented_ostream::DelimitedScope scope(os);
-  os << formatv("{0} {1};\n", resTy.namedType, serName);
+  os << formatv("{0} {1};\n", resTy.protoType, serName);
   if (preCaseBody)
     os.printReindented(preCaseBody.value());
-  os << formatv("llvm::TypeSwitch<{0}>({1})\n", resTy.factualType, inputName);
+  os << formatv("llvm::TypeSwitch<{0}>({1})\n", resTy.langType, inputName);
   for (auto c : cases) {
-    os << formatv(".Case<{0}>([&]({0} {1}) {{\n", c.cppType, inputName);
+    os << formatv(".Case<{0}>([&]({0} {1}) {{\n", c.langType, inputName);
     printCodeBlock(os, c.caseBody);
     os << "})\n";
   }
@@ -26,7 +28,7 @@ void CppProtoSerializer::dumpSwitchFunc(raw_indented_ostream &os) {
                 "  {1}.dump();\n"
                 "  llvm_unreachable(\"unknown {1} during serialization\");\n"
                 "});\n",
-                resTy.factualType, inputName);
+                resTy.langType, inputName);
   if (postCaseBody)
     os.printReindented(postCaseBody.value());
   os << formatv("return {0};", serName);
@@ -103,15 +105,90 @@ void CppSwitchSource::genClass() {
     genCtr();
 
   auto &mainFuncBody =
-      addTranslatorMethod(resTy.namedType, resTy.factualType,
-                          formatv("{0}{1}", funcName, resTy.namedType))
+      addTranslatorMethod(resTy.protoType, resTy.langType,
+                          formatv("{0}{1}", funcName, resTy.protoType))
           ->body();
 
   dumpSwitchFunc(mainFuncBody.getStream());
 
   for (auto cas : cases) {
-    auto *method = addTranslatorMethod(
-        cas.protoType, cas.cppType, formatv("{0}{1}", funcName, cas.protoType));
+    auto *method =
+        addTranslatorMethod(cas.protoType, cas.langType,
+                            formatv("{0}{1}", funcName, cas.protoType));
     printCodeBlock(method->body().getStream(), cas.translatorBody);
+  }
+  internalClass.finalize();
+}
+
+const char *const serializerFuncStart = R"(
+fun {0}.{1}(): {4}.{2} {{
+    val {3} = {4}.{2}.newBuilder())";
+
+const char *const serializerFuncEnd = R"(
+    return {0}.build()
+})";
+
+std::string KotlinProtoSerializer::getNeededTypeName(llvm::StringRef rawName) {
+  if (dropNamespace) {
+    if (rawName.starts_with("MLIR"))
+      rawName = rawName.drop_front(4);
+    if (rawName.starts_with("CIR"))
+      rawName = rawName.drop_front(3);
+  }
+  return rawName.str();
+}
+
+void KotlinProtoSerializer::dumpSwitchFunc(llvm::raw_ostream &os) {
+  const char *const switchStart = R"(
+    when (this) {)";
+
+  const char *const switchCase = R"(
+        is {0} -> {1}.set{2}(this.{3}()))";
+
+  const char *const switchEnd = R"(
+        else -> error("Unknown switch case for {0}!")
+    })";
+
+  os << formatv(serializerFuncStart, className, funcName, resTy.protoType,
+                serName, subName);
+
+  os << switchStart;
+  for (auto &c : cases) {
+    auto protoType = getNeededTypeName(c.protoType);
+    auto snakeName = llvm::convertToSnakeFromCamelCase(protoType);
+    auto casePtotoTypeAsField =
+        llvm::convertToCamelFromSnakeCase(snakeName, true);
+    os << formatv(switchCase, c.langType, serName, casePtotoTypeAsField,
+                  funcName);
+  }
+  os << formatv(switchEnd, className);
+
+  os << formatv(serializerFuncEnd, serName, className);
+}
+
+void KotlinProtoSerializer::dumpCaseFunc(llvm::raw_ostream &os,
+                                         llvm::StringRef typ,
+                                         llvm::StringRef body,
+                                         llvm::StringRef protoTyp) {
+  if (protoTyp.empty())
+    protoTyp = typ;
+  os << formatv(serializerFuncStart, typ, funcName, protoTyp, serName, subName);
+  if (!body.empty())
+    os << "\n";
+  mlir::raw_indented_ostream indentOs(os);
+  printCodeBlock(indentOs, body, 4);
+  os << formatv(serializerFuncEnd, serName);
+}
+
+void KotlinProtoSerializer::genClassDef(llvm::raw_ostream &os) {
+  dumpSwitchFunc(os);
+  os << "\n";
+  for (auto &m : helpers) {
+    dumpCaseFunc(os, m.typ, m.body);
+    os << "\n";
+  }
+  for (auto &c : cases) {
+    dumpCaseFunc(os, c.langType, c.translatorBody, c.protoType);
+    os << "\n";
   }
 }
