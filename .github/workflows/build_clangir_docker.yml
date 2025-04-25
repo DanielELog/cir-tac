@@ -24,4 +24,4 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/clangir_${{ runner.os }}
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/clangir_linux
