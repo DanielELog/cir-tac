@@ -6,7 +6,7 @@ PROTOBUF_REPOSITORY="${PROTOBUF_REPOSITORY:=https://github.com/protocolbuffers/p
 PROTOBUF_VERSION="${PROTOBUF_VERSION:=v29.3}"
 
 CLANGIR_REPOSITORY="${CLANGIR_REPOSITORY:=https://github.com/explyt/clangir.git}"
-CLANGIR_VERSION="${CLANGIR_VERSION:=1b052dac90f8d070aafc2034e13ae3e88552d58a}"
+CLANGIR_VERSION="${CLANGIR_VERSION:=21.03.2025-rc}"
 
 function checkEnvVar() {
   if [ -z ${!1+x} ]; then
