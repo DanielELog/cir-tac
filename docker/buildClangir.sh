@@ -2,9 +2,6 @@
 
 set -euo pipefail
 
-PROTOBUF_REPOSITORY="${PROTOBUF_REPOSITORY:=https://github.com/protocolbuffers/protobuf.git}"
-PROTOBUF_VERSION="${PROTOBUF_VERSION:=v29.3}"
-
 CLANGIR_REPOSITORY="${CLANGIR_REPOSITORY:=https://github.com/explyt/clangir.git}"
 CLANGIR_VERSION="${CLANGIR_VERSION:=21.03.2025-rc}"
 
@@ -69,37 +66,9 @@ function buildClangir() {
   export CLANG_BUILD_DIR
 }
 
-function buildProtobuf() {
-  echo "Compiling protobuf..."
-  PROTOBUF_SOURCES_PATH="$(gitCloneAndCheckout "$PROTOBUF_REPOSITORY" "$PROTOBUF_VERSION")"
-  export PROTOBUF_SOURCES_PATH
-  echo "Successfully cloned protobuf!"
-
-  # -> protobuf/build
-  mkdir -p "$PROTOBUF_SOURCES_PATH"/build
-  pushd >/dev/null "$PROTOBUF_SOURCES_PATH"/build || exit 2
-
-  cmake -D CMAKE_BUILD_TYPE=Release \
-        -D protobuf_BUILD_TESTS=OFF \
-        -D CMAKE_INSTALL_PREFIX=../install \
-        -G Ninja ..
-  ninja install -j16
-
-  # <- protobuf/build
-  popd >/dev/null || exit 2
-
-  PROTOBUF_BUILD_DIR=$(realpath "$PROTOBUF_SOURCES_PATH"/build)
-  export PROTOBUF_BUILD_DIR
-
-  PROTOBUF_INSTALL_DIR=$(realpath "$PROTOBUF_SOURCES_PATH"/install)
-  export PROTOBUF_INSTALL_DIR
-}
-
 # Check existence of environment variables
 checkEnvVar CLANGIR_REPOSITORY
 checkEnvVar CLANGIR_VERSION
-checkEnvVar PROTOBUF_REPOSITORY
-checkEnvVar PROTOBUF_VERSION
 
 # ->  compilersSources
 mkdir -p compilersSources
@@ -110,11 +79,7 @@ if [ -z ${CLANG_BUILD_DIR+x} ]; then
     buildClangir
 fi
 
-# Install protobuf
-buildProtobuf
-
 # <- compilersSources
 popd >/dev/null || exit 2
 
 rm -rf $CLANGIR_SOURCES_PATH
-rm -rf $PROTOBUF_SOURCES_PATH
