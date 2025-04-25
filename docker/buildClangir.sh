@@ -57,7 +57,7 @@ function buildClangir() {
         -DCLANG_ENABLE_CIR=ON \
         -DCMAKE_BUILD_TYPE=Release \
         -GNinja ..
-  ninja -j16
+  ninja -j16 > /dev/null
 
   # <- clangir/llvm/build
   popd >/dev/null || exit 2
