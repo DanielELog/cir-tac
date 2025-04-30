@@ -81,6 +81,7 @@ function buildClangir() {
         -DCMAKE_OSX_SYSROOT="/osxcross/SDK/MacOSX14.5.sdk" \
         -DCMAKE_OSX_ARCHITECTURES="arm64" \
         -DLLVM_TARGETS_TO_BUILD="ARM" \
+        -DLLVM_USE_LINKER=lld \
         -GNinja ..
   ninja -j16
 

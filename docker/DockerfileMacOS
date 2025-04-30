@@ -8,7 +8,7 @@ FROM ubuntu
 COPY --from=osxcross /osxcross /osxcross
 
 RUN apt-get update && apt-get install -y \
-  clang cmake lld libc6-dev git python3 zlib1g-dev ninja-build lld
+  clang cmake lld libc6-dev git python3 zlib1g-dev ninja-build
 ENV PATH="/osxcross/bin:$PATH"
 
 COPY docker/buildClangir.sh ./
