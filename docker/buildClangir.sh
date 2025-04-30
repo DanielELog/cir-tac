@@ -60,7 +60,7 @@ function buildClangir() {
         -DCMAKE_CXX_COMPILER=$CXX_COMPILER \
         -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON \
         -GNinja ..
-  ninja -j16 > /dev/null
+  ninja -j16
 
   # <- clangir/llvm/build
   popd >/dev/null || exit 2
