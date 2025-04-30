@@ -1,11 +1,12 @@
 ARG OSXCROSS_VERSION=latest
 FROM crazymax/osxcross:${OSXCROSS_VERSION}-ubuntu AS osxcross
 
-COPY --from=osxcross /osxcross /osxcross
-
 ARG DEBIAN_FRONTEND=noninteractive
 
 FROM ubuntu
+
+COPY --from=osxcross /osxcross /osxcross
+
 RUN apt-get update && apt-get install -y \
   clang cmake lld libc6-dev git python3 zlib1g-dev ninja-build
 ENV PATH="/osxcross/bin:$PATH"
