@@ -8,5 +8,8 @@ RUN apt install -y --no-install-recommends \
 
 COPY docker/buildClangir.sh ./
 
+ENV C_COMPILER=gcc
+ENV CXX_COMPILER=g++
+
 RUN chmod +x buildClangir.sh
 RUN ./buildClangir.sh
