@@ -18,5 +18,6 @@ ENV C_COMPILER=o64-clang
 ENV CXX_COMPILER=o64-clang++
 
 ENV LD_LIBRARY_PATH="/osxcross/lib"
+ENV SDKROOT="/osxcross/SDK/MacOSX14.5.sdk"
 RUN --mount=type=bind,from=osxcross,source=/osxcross,target=/osxcross \
   ./buildClangir.sh
