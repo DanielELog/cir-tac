@@ -77,6 +77,7 @@ function buildClangir() {
         -DCMAKE_TOOLCHAIN_FILE="/$TARGET-clang.cmake" \
         -DLLVM_HOST_TRIPLE=$TARGET \
         -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON \
+        -DLLVM_USE_HOST_TOOLS=ON \
         -DCMAKE_LINKER=lld \
         -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld" \
         -GNinja ..
