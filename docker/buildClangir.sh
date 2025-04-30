@@ -72,7 +72,10 @@ function buildClangir() {
   pushd >/dev/null "$CLANGIR_SOURCES_PATH"/llvm/build-host || exit 2
 
   # building llvm tools for the host system that are necessary for the full llvm build
-  CC=clang CXX=clang++ cmake .. -DLLVM_ENABLE_PROJECTS='clang;compiler-rt;lld;clang-tools-extra' -GNinja
+  CC=clang CXX=clang++ cmake .. \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DLLVM_ENABLE_PROJECTS='clang;compiler-rt;lld;clang-tools-extra' \
+    -GNinja
   ninja llvm-tblgen clang-tblgen
 
   echo "Compiled llvm tools for the host!"
