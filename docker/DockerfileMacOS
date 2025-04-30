@@ -14,8 +14,8 @@ ENV PATH="/osxcross/bin:$PATH"
 COPY docker/buildClangir.sh ./
 RUN chmod +x buildClangir.sh
 
-ENV CC=clang
-ENV CXX=clang++
+ENV CC=oa64-clang
+ENV CXX=oa64-clang++
 
 ENV MACOSX_DEPLOYMENT_TARGET=11.1
 

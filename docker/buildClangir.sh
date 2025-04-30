@@ -15,7 +15,6 @@ set(CMAKE_C_COMPILER_TARGET $TARGET)
 set(CMAKE_CXX_COMPILER_TARGET $TARGET)
 set(CMAKE_C_FLAGS_INIT "$CFLAGS")
 set(CMAKE_CXX_FLAGS_INIT "$CFLAGS")
-set(CMAKE_LINKER_TYPE LLD)
 set(CMAKE_C_COMPILER "$CC")
 set(CMAKE_CXX_COMPILER "$CXX")
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
@@ -72,7 +71,7 @@ function buildClangir() {
   mkdir -p "$CLANGIR_SOURCES_PATH"/llvm/build
   pushd >/dev/null "$CLANGIR_SOURCES_PATH"/llvm/build || exit 2
 
-  cmake -DLLVM_ENABLE_PROJECTS="lld;clang;mlir" \
+  cmake -DLLVM_ENABLE_PROJECTS="clang;mlir" \
         -DCLANG_ENABLE_CIR=ON \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_TOOLCHAIN_FILE="/$TARGET-clang.cmake" \
@@ -81,7 +80,6 @@ function buildClangir() {
         -DCMAKE_OSX_SYSROOT="/osxcross/SDK/MacOSX14.5.sdk" \
         -DCMAKE_OSX_ARCHITECTURES="arm64" \
         -DLLVM_TARGETS_TO_BUILD="ARM" \
-        -DLLVM_USE_LINKER=lld \
         -GNinja ..
   ninja -j16
 
