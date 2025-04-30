@@ -60,6 +60,8 @@ function buildClangir() {
         -DCMAKE_CXX_COMPILER=$CXX_COMPILER \
         -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON \
         -DCMAKE_SYSTEM_NAME=Darwin \
+        -DCMAKE_OSX_SYSROOT="/osxcross/SDK/MacOSX14.5.sdk" \
+        -DCMAKE_OSX_ARCHITECTURES="arm64" \
         -GNinja ..
   ninja -j16
 
