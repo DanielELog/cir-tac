@@ -59,6 +59,7 @@ function buildClangir() {
         -DCMAKE_C_COMPILER=$C_COMPILER \
         -DCMAKE_CXX_COMPILER=$CXX_COMPILER \
         -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON \
+        -DCMAKE_SYSTEM_NAME=Darwin \
         -GNinja ..
   ninja -j16
 

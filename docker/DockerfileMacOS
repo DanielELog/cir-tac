@@ -1,6 +1,8 @@
 ARG OSXCROSS_VERSION=latest
 FROM crazymax/osxcross:${OSXCROSS_VERSION}-ubuntu AS osxcross
 
+COPY --from=osxcross /osxcross /osxcross
+
 ARG DEBIAN_FRONTEND=noninteractive
 
 FROM ubuntu
