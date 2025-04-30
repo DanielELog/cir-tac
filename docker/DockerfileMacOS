@@ -1,10 +1,18 @@
-FROM sickcodes/docker-osx:auto
+ARG OSXCROSS_VERSION=latest
+FROM crazymax/osxcross:${OSXCROSS_VERSION}-ubuntu AS osxcross
 
-RUN /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-RUN brew install \
-  git python3 g++ cmake make ninja-build
+ARG DEBIAN_FRONTEND=noninteractive
+
+FROM ubuntu
+RUN apt-get update && apt-get install -y \
+  clang cmake lld libc6-dev git python3 zlib1g-dev ninja-build
+ENV PATH="/osxcross/bin:$PATH"
 
 COPY docker/buildClangir.sh ./
 
-RUN chmod +x buildClangir.sh
-RUN ./buildClangir.sh
+ENV C_COMPILER=o64-clang
+ENV CXX_COMPILER=o64-clang++
+
+ENV LD_LIBRARY_PATH="/osxcross/lib"
+RUN --mount=type=bind,from=osxcross,source=/osxcross,target=/osxcross \
+      ./buildClangir.sh

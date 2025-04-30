@@ -56,6 +56,8 @@ function buildClangir() {
   cmake -DLLVM_ENABLE_PROJECTS="clang;mlir" \
         -DCLANG_ENABLE_CIR=ON \
         -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_C_COMPILER=$C_COMPILER \
+        -DCMAKE_CXX_COMPILER=$CXX_COMPILER \
         -GNinja ..
   ninja -j16 > /dev/null
 
@@ -69,10 +71,8 @@ function buildClangir() {
 # Check existence of environment variables
 checkEnvVar CLANGIR_REPOSITORY
 checkEnvVar CLANGIR_VERSION
-
-# ->  compilersSources
-mkdir -p compilersSources
-pushd compilersSources >/dev/null || exit 2
+checkEnvVar C_COMPILER
+checkEnvVar CXX_COMPILER
 
 # Install clangir
 if [ -z ${CLANG_BUILD_DIR+x} ]; then
