@@ -71,6 +71,7 @@ function buildClangir() {
   mkdir -p "$CLANGIR_SOURCES_PATH"/llvm/build-host
   pushd >/dev/null "$CLANGIR_SOURCES_PATH"/llvm/build-host || exit 2
 
+  # building llvm tools for the host system that are necessary for the full llvm build
   CC=clang CXX=clang++ cmake ../llvm -DLLVM_ENABLE_PROJECTS='clang;compiler-rt;lld;clang-tools-extra' -GNinja
   ninja llvm-tblgen clang-tblgen
 
@@ -85,7 +86,7 @@ function buildClangir() {
         -DCLANG_ENABLE_CIR=ON \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_TOOLCHAIN_FILE="/$TARGET-clang.cmake" \
-        -DLLVM_TABLEGEN=/usr/bin/llvm-tblgen-11 \
+        -DLLVM_TABLEGEN="$CLANGIR_SOURCES_PATH"/llvm/build-host/bin/llvm-tblgen \
         -DCLANG_TABLEGEN="$CLANGIR_SOURCES_PATH"/llvm/build-host/bin/clang-tblgen \
         -DLLVM_HOST_TRIPLE=$TARGET \
         -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON \
