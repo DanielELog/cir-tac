@@ -94,8 +94,6 @@ function buildClangir() {
 # Check existence of environment variables
 checkEnvVar CLANGIR_REPOSITORY
 checkEnvVar CLANGIR_VERSION
-checkEnvVar C_COMPILER
-checkEnvVar CXX_COMPILER
 
 # Install clangir
 if [ -z ${CLANG_BUILD_DIR+x} ]; then
