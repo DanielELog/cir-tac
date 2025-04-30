@@ -4,6 +4,25 @@ set -euo pipefail
 
 CLANGIR_REPOSITORY="${CLANGIR_REPOSITORY:=https://github.com/explyt/clangir.git}"
 CLANGIR_VERSION="${CLANGIR_VERSION:=21.03.2025-rc}"
+SYSROOT="/osxcross/SDK/MacOSX14.5.sdk"
+TARGET=arm-apple-darwin20
+CFLAGS=""
+
+cat - <<EOF > $TARGET-clang.cmake
+set(CMAKE_SYSTEM_NAME Linux)
+set(CMAKE_SYSROOT "$SYSROOT")
+set(CMAKE_C_COMPILER_TARGET $TARGET)
+set(CMAKE_CXX_COMPILER_TARGET $TARGET)
+set(CMAKE_C_FLAGS_INIT "$CFLAGS")
+set(CMAKE_CXX_FLAGS_INIT "$CFLAGS")
+set(CMAKE_LINKER_TYPE LLD)
+set(CMAKE_C_COMPILER clang)
+set(CMAKE_CXX_COMPILER clang++)
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
+EOF
 
 function checkEnvVar() {
   if [ -z ${!1+x} ]; then
@@ -53,15 +72,18 @@ function buildClangir() {
   mkdir -p "$CLANGIR_SOURCES_PATH"/llvm/build
   pushd >/dev/null "$CLANGIR_SOURCES_PATH"/llvm/build || exit 2
 
-  cmake -DLLVM_ENABLE_PROJECTS="clang;mlir" \
+  cmake -DLLVM_ENABLE_PROJECTS="lld;clang;mlir" \
         -DCLANG_ENABLE_CIR=ON \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_C_COMPILER=$C_COMPILER \
         -DCMAKE_CXX_COMPILER=$CXX_COMPILER \
+        -DCMAKE_TOOLCHAIN_FILE=$(pwd)/$TARGET-clang.cmake \
+        -DLLVM_HOST_TRIPLE=$TARGET \
         -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON \
         -DCMAKE_SYSTEM_NAME=Darwin \
         -DCMAKE_OSX_SYSROOT="/osxcross/SDK/MacOSX14.5.sdk" \
         -DCMAKE_OSX_ARCHITECTURES="arm64" \
+        -DLLVM_TARGETS_TO_BUILD="ARM" \
         -GNinja ..
   ninja -j16
 

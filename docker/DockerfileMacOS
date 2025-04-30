@@ -8,7 +8,7 @@ FROM ubuntu
 COPY --from=osxcross /osxcross /osxcross
 
 RUN apt-get update && apt-get install -y \
-  clang cmake lld libc6-dev git python3 zlib1g-dev ninja-build
+  clang cmake lld libc6-dev git python3 zlib1g-dev ninja-build lld
 ENV PATH="/osxcross/bin:$PATH"
 
 COPY docker/buildClangir.sh ./
@@ -16,8 +16,12 @@ RUN chmod +x buildClangir.sh
 
 ENV C_COMPILER=o64-clang
 ENV CXX_COMPILER=o64-clang++
+ENV CC=oa64-clang
+ENV CXX=oa64-clang++
 
-ENV LD_LIBRARY_PATH="/osxcross/lib"
+ENV MACOSX_DEPLOYMENT_TARGET=11.1
+
+ENV LD_LIBRARY_PATH="/osxcross/lib:$LD_LIBRARY_PATH"
 ENV SDKROOT="/osxcross/SDK/MacOSX14.5.sdk"
 RUN --mount=type=bind,from=osxcross,source=/osxcross,target=/osxcross \
   ./buildClangir.sh
