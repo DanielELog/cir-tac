@@ -30,7 +30,7 @@ jobs:
 
       - name: Create image tag
         run: |
-          echo "IMAGE_TAG=${{ secrets.DOCKERHUB_USERNAME }}/clangir-${{ runner.os }}-build:${{ env.CLANGIR_REPOSITORY }}-${{ env.CLANGIR_VERSION }}" \
+          echo "IMAGE_TAG=${{ secrets.DOCKERHUB_USERNAME }}/clangir_macos-latest_build:${{ env.CLANGIR_REPOSITORY }}-${{ env.CLANGIR_VERSION }}" \
             >> $GITHUB_ENV
 
       - name: Copy clangir to Docker image and push
