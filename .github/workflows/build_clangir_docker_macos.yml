@@ -29,10 +29,10 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Copy clangir to Docker image and push
-        id: push
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./docker/DockerfileMacOS
-          push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/macos-latest-${{ env.CLANGIR_REPOSITORY }}-${{ env.CLANGIR_VERSION }}-clangir-build
+        run: |
+          echo "IMAGE_TAG=${{ secrets.DOCKERHUB_USERNAME }}/clangir-${{ runner.os }}-build:${{ env.CLANGIR_REPOSITORY }}-${{ env.CLANGIR_VERSION }}" \
+            >> $GITHUB_ENV
+          docker build . \
+            -t $IMAGE_TAG \
+            -f ./docker/DockerfileMacOS
+          docker push $IMAGE_TAG
