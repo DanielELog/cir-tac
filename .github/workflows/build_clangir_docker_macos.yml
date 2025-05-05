@@ -18,7 +18,7 @@ jobs:
       - name: Dummy input
         run: mkdir clangir
 
-      - name: Install and start Docker
+      - name: Install Docker
         run: |
           brew install docker --formula
 
@@ -28,10 +28,13 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Copy clangir to Docker image and push
+      - name: Create image tag
         run: |
           echo "IMAGE_TAG=${{ secrets.DOCKERHUB_USERNAME }}/clangir-${{ runner.os }}-build:${{ env.CLANGIR_REPOSITORY }}-${{ env.CLANGIR_VERSION }}" \
             >> $GITHUB_ENV
+
+      - name: Copy clangir to Docker image and push
+        run: |
           docker build \
             -t ${{ env.IMAGE_TAG }} \
             -f ./docker/DockerfileMacOS \
