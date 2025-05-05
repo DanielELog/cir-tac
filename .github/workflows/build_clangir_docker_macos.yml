@@ -15,25 +15,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Checkout clangir repo
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ env.CLANGIR_VERSION }}
-          repository: ${{ env.CLANGIR_REPOSITORY }}
-          path: clangir
+      - name: Dummy input
+        run: mkdir clangir
 
-      - name: Install ninja
-        run: |
-          brew install ninja
-
-      - name: Build clangir
-        run: |
-          if [[ ! -d clangir/llvm/build ]]
-          then
-            cd clangir/llvm && mkdir -p build && cd build
-            cmake -GNinja -DLLVM_ENABLE_PROJECTS="clang;mlir" -DCLANG_ENABLE_CIR=ON -DCMAKE_BUILD_TYPE=Release ..
-            ninja
-          fi
+      - name: Install docker
+        run: brew install docker
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
