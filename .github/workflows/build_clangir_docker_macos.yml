@@ -32,7 +32,8 @@ jobs:
         run: |
           echo "IMAGE_TAG=${{ secrets.DOCKERHUB_USERNAME }}/clangir-${{ runner.os }}-build:${{ env.CLANGIR_REPOSITORY }}-${{ env.CLANGIR_VERSION }}" \
             >> $GITHUB_ENV
-          docker build . \
-            -t $IMAGE_TAG \
-            -f ./docker/DockerfileMacOS
-          docker push $IMAGE_TAG
+          docker build \
+            -t ${{ env.IMAGE_TAG }} \
+            -f ./docker/DockerfileMacOS \
+            .
+          docker push ${{ env.IMAGE_TAG }}
