@@ -20,7 +20,7 @@ jobs:
 
       - name: Install and start Docker
         run: |
-          brew install docker --formula
+          brew install docker-machine docker --formula
           brew services start docker-machine
 
       - name: Login to Docker Hub
