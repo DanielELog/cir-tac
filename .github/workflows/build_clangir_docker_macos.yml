@@ -28,9 +28,13 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Normalize repository tag
+        run: |
+          echo "REPO_NORMALIZED=$(echo ${{ env.CLANGIR_REPOSITORY }} | sed 's:/:_:g')" >> $GITHUB_ENV
+
       - name: Create image tag
         run: |
-          echo "IMAGE_TAG=${{ secrets.DOCKERHUB_USERNAME }}/clangir_macos-latest_build:${{ env.CLANGIR_REPOSITORY }}-${{ env.CLANGIR_VERSION }}" \
+          echo "IMAGE_TAG=${{ secrets.DOCKERHUB_USERNAME }}/clangir_macos-latest_build:${{ env.REPO_NORMALIZED }}-${{ env.CLANGIR_VERSION }}" \
             >> $GITHUB_ENV
 
       - name: Copy clangir to Docker image and push
