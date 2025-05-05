@@ -3,13 +3,37 @@ name: Build and push docker image of ClangIR (MacOS)
 on:
   workflow_dispatch:
 
+env:
+  CLANGIR_REPOSITORY: "explyt/clangir"
+  CLANGIR_VERSION: "21.03.2025-rc"
+
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Checkout clangir repo
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.CLANGIR_VERSION }}
+          repository: ${{ env.CLANGIR_REPOSITORY }}
+          path: clangir
+
+      - name: Install ninja
+        run: |
+          brew install ninja
+
+      - name: Build clangir
+        run: |
+          if [[ ! -d clangir/llvm/build ]]
+          then
+            cd clangir/llvm && mkdir -p build && cd build
+            cmake -GNinja -DLLVM_ENABLE_PROJECTS="clang;mlir" -DCLANG_ENABLE_CIR=ON -DCMAKE_BUILD_TYPE=Release ..
+            ninja
+          fi
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -17,11 +41,11 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push Docker image
+      - name: Copy clangir to Docker image and push
         id: push
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./docker/DockerfileMacOS
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/clangir_macos
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/macos-latest-${{ env.CLANGIR_REPOSITORY }}-${{ env.CLANGIR_VERSION }}-clangir-build
