@@ -5,7 +5,7 @@ set -euo pipefail
 CLANGIR_REPOSITORY="${CLANGIR_REPOSITORY:=https://github.com/explyt/clangir.git}"
 CLANGIR_VERSION="${CLANGIR_VERSION:=21.03.2025-rc}"
 SYSROOT="/osxcross/SDK/MacOSX14.5.sdk"
-TARGET=arm-apple-darwin20
+TARGET=arm64-apple-darwin23
 CFLAGS=""
 
 cat - <<EOF > $TARGET-clang.cmake
@@ -53,8 +53,10 @@ function gitCloneAndCheckout() {
   # -> 'repository'
   pushd >/dev/null "$DESTINATION_DIR" || exit 2
 
-  git checkout "$2" --quiet
-  GIT_SSL_NO_VERIFY=1 git submodule update --init --recursive --quiet
+  if [ ! -d ".github" ]; then
+    git checkout "$2" --quiet
+    GIT_SSL_NO_VERIFY=1 git submodule update --init --recursive --quiet
+  fi
 
   # <- 'repository'
   popd >/dev/null || exit 2
@@ -91,11 +93,10 @@ function buildClangir() {
         -DCLANG_ENABLE_CIR=ON \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_TOOLCHAIN_FILE="/$TARGET-clang.cmake" \
-        -DLLVM_TABLEGEN="$CLANGIR_SOURCES_PATH"/llvm/build-host/bin/llvm-tblgen \
-        -DCLANG_TABLEGEN="$CLANGIR_SOURCES_PATH"/llvm/build-host/bin/clang-tblgen \
         -DLLVM_HOST_TRIPLE=$TARGET \
         -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON \
         -DLLVM_USE_HOST_TOOLS=ON \
+        -DLLVM_NATIVE_TOOLS_DIR="$CLANGIR_SOURCES_PATH"/llvm/build-host/bin \
         -DCMAKE_LINKER=lld \
         -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld" \
         -GNinja ..
