@@ -20,7 +20,7 @@ jobs:
 
       - name: Install and start Docker
         run: |
-          brew install docker-machine docker --formula
+          brew install docker-machine docker --cask
           brew services start docker-machine
 
       - name: Set up Docker Buildx
