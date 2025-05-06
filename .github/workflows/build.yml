@@ -26,6 +26,7 @@ jobs:
         run: |
           docker pull ${{ env.IMAGE_TAG }}
           docker create --name clangir_build ${{ env.IMAGE_TAG }}
+          mkdir -p clangir/llvm/build
           docker cp clangir_build:/clangir/llvm/build ${{ github.workspace }}/clangir/llvm/build
           docker rm -f clangir_build
 
