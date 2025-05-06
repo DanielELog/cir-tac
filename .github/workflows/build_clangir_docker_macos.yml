@@ -13,20 +13,26 @@ jobs:
     runs-on: macos-latest
 
     steps:
+      - name: Checkout clangir repo
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.CLANGIR_VERSION }}
+          repository: ${{ env.CLANGIR_REPOSITORY }}
+          path: clangir
 
       - name: Cache clangir build
         id: cache-clangir-build
         uses: actions/cache@v4
         with:
-          path: clangir
-          key: dummy-input
+          path: clangir/llvm/build
+          key: macos-latest-${{ env.CLANGIR_NORMALIZED_REPO }}-${{ env.CLANGIR_VERSION }}-clangir-build
 
-      - name: Dummy input
+      - name: Build clangir
+        if: steps.cache-clangir-build.outputs.cache-hit != 'true'
         run: |
-          mkdir clangir
-          cd clangir
-          touch something.txt
-          echo hello >> something.txt
+          cd clangir/llvm && mkdir -p build && cd build
+          cmake -GNinja -DLLVM_ENABLE_PROJECTS="clang;mlir" -DCLANG_ENABLE_CIR=ON -DCMAKE_BUILD_TYPE=MinSizeRel ..
+          ninja
 
   upload:
     runs-on: ubuntu-latest
@@ -39,8 +45,8 @@ jobs:
       - name: Restore clangir built on macOS
         uses: actions/cache/restore@v4
         with:
-          key: dummy-input
-          path: clangir
+          key: macos-latest-${{ env.CLANGIR_NORMALIZED_REPO }}-${{ env.CLANGIR_VERSION }}-clangir-build
+          path: clangir/llvm/build
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
