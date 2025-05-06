@@ -28,11 +28,11 @@ jobs:
       - name: Concat clangir Docker image tag
         run: |
           echo "IMAGE_TAG=$(printf "%s" \
-            ${{ secrets.DOCKERHUB_USERNAME }}/\
-            clangir_${{ matrix.os }}_build:\
-            ${{ matrix.clangir.normalized_repo }}-\
-            ${{ matrix.clangir.version }}" \
-            ) >> $GITHUB_ENV
+              ${{ secrets.DOCKERHUB_USERNAME }}/\
+              clangir_${{ matrix.os }}_build:\
+              ${{ matrix.clangir.normalized_repo }}-\
+              ${{ matrix.clangir.version }}" \
+            )" >> $GITHUB_ENV
 
       - name: Pull clangir build from Docker
         run: |
