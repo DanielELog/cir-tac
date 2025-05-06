@@ -102,6 +102,7 @@ jobs:
     - run: |
         echo "is this weird?"
         if [[ ! -d ${{ github.workspace }}/clangir/llvm/build/bin ]]
+        then
           echo "this is weird"
         fi
 
