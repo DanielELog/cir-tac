@@ -33,6 +33,11 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Set clangir id environment variables
+        run: |
+          echo "CLANGIR_REPOSITORY=${{ matrix.clangir.repository }}" >> $GITHUB_OUTPUT
+          echo "CLANGIR_VERSION=${{ matrix.clangir.version }}" >> $GITHUB_OUTPUT
+
       - name: Create image tag
         run: |
           echo "IMAGE_TAG=clangir_ubuntu-latest_build:${{ matrix.clangir.normalized_repo }}-${{ matrix.clangir.version }}" \
@@ -46,6 +51,3 @@ jobs:
           file: ./docker/Dockerfile
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_TAG }}
-        env:
-          CLANGIR_REPOSITORY: ${{ matrix.clangir.repository }}
-          CLANGIR_VERSION: ${{ matrix.clangir.version }}
