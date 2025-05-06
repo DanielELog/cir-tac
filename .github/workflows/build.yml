@@ -100,10 +100,23 @@ jobs:
         path: ${{ github.workspace }}/clangir
 
     - run: |
+        ls
         echo "is this weird?"
         if [[ ! -d ${{ github.workspace }}/clangir/llvm/build/bin ]]
         then
           echo "this is weird"
+        fi
+        if [[ ! -d ${{ github.workspace }}/clangir/llvm/build ]]
+        then
+          echo "this is weird 2"
+        fi
+        if [[ ! -d ${{ github.workspace }}/clangir/llvm ]]
+        then
+          echo "this is weird 3"
+        fi
+        if [[ ! -d ${{ github.workspace }}/clangir ]]
+        then
+          echo "this is weird 4"
         fi
 
     - uses: actions/checkout@v4
