@@ -13,7 +13,31 @@ on:
         type: string
 
 jobs:
+  pull-clangir-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Concat clangir Docker image tag
+        run: |
+          echo "IMAGE_TAG=clangir_macos-latest_build:explyt_clangir-${{ inputs.CLANGIR_VERSION }}" \
+            >> $GITHUB_ENV
+
+      - name: Pull clangir build from Docker
+        run: |
+          docker pull ${{ env.IMAGE_TAG }}
+          docker create --name clangir_build ${{ env.IMAGE_TAG }}
+          docker cp clangir_build:/clangir/llvm/build ${{ github.workspace }}/clangir/llvm/build
+          docker rm -f clangir_build
+
+      - name: Create artifact to pass to macOS runner
+        uses: actions/upload-artifact@v4
+        with:
+          name: clangir_macos_build
+          path: ${{ github.workspace }}/clangir/llvm/build
+          retention-days: 1
+
   build:
+    needs: pull-clangir-build
     strategy:
       matrix:
         os: [macos-latest]
@@ -60,17 +84,12 @@ jobs:
       run: |
         brew install protobuf ninja docker
 
-    - name: Concat clangir Docker image tag
-      run: |
-        echo "IMAGE_TAG=clangir_${{ matrix.os }}_build:explyt_clangir-${{ inputs.CLANGIR_VERSION }}" \
-          >> $GITHUB_ENV
-
-    - name: Pull clangir build from Docker
-      run: |
-        docker pull ${{ env.IMAGE_TAG }}
-        docker create --name clangir_build ${{ env.IMAGE_TAG }}
-        docker cp clangir_build:/clangir/llvm/build ${{ github.workspace }}/clangir/llvm/build
-        docker rm -f clangir_build
+    - name: Fetch clangir build (macOS)
+      if: startsWith(runner.os, 'macOS')
+      uses: actions/download-artifact@v4
+      with:
+        name: clangir_macos_build
+        path: ${{ github.workspace }}/clangir/llvm/build
 
     - uses: actions/checkout@v4
       with:
