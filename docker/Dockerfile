@@ -8,5 +8,8 @@ RUN apt install -y --no-install-recommends \
 
 COPY docker/buildClangir.sh ./
 
+ARG CLANGIR_REPOSITORY=$CLANGIR_REPOSITORY
+ARG CLANGIR_VERSION=$CLANGIR_VERSION
+
 RUN chmod +x buildClangir.sh
 RUN ./buildClangir.sh
