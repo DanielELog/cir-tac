@@ -31,7 +31,7 @@ jobs:
               ${{ secrets.DOCKERHUB_USERNAME }}/\
               clangir_${{ matrix.os }}_build:\
               ${{ matrix.clangir.normalized_repo }}-\
-              ${{ matrix.clangir.version }}" \
+              ${{ matrix.clangir.version }} \
             )" >> $GITHUB_ENV
 
       - name: Pull clangir build from Docker
