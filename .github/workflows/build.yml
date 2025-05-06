@@ -27,14 +27,14 @@ jobs:
           docker pull ${{ env.IMAGE_TAG }}
           docker create --name clangir_build ${{ env.IMAGE_TAG }}
           mkdir -p clangir/llvm/build
-          docker cp clangir_build:/clangir ${{ github.workspace }}/clangir
+          docker cp clangir_build:/clangir/llvm/build ${{ github.workspace }}/clangir_build
           docker rm -f clangir_build
 
       - name: Create artifact to pass to macOS runner
         uses: actions/upload-artifact@v4
         with:
           name: clangir_macos_build
-          path: ${{ github.workspace }}/clangir
+          path: ${{ github.workspace }}/clangir_build
           retention-days: 1
 
   build:
@@ -92,15 +92,18 @@ jobs:
         repository: ${{ inputs.CLANGIR_REPOSITORY }}
         path: ${{ github.workspace }}/clangir
 
+    - name: Create clangir build directory
+      run: mkdir -p ${{ github.workspace }}/clangir/llvm/build
+
     - name: Fetch clangir build (macOS)
       if: startsWith(runner.os, 'macOS')
       uses: actions/download-artifact@v4
       with:
         name: clangir_macos_build
-        path: ${{ github.workspace }}/clangir
+        path: ${{ github.workspace }}/clangir/llvm/build
 
     - run: |
-        ls
+        ls ./clangir
         echo "is this weird?"
         if [[ ! -d ${{ github.workspace }}/clangir/llvm/build/bin ]]
         then
