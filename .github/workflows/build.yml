@@ -16,18 +16,11 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [macos-latest]
 
     runs-on: ${{ matrix.os }}
 
     steps:
-    - name: Checkout clangir repo
-      uses: actions/checkout@v4
-      with:
-        ref: ${{ inputs.CLANGIR_VERSION }}
-        repository: ${{ inputs.CLANGIR_REPOSITORY }}
-        path: clangir
-
     - name: Install Packages (Linux)
       if: startsWith(runner.os, 'Linux')
       run: |
@@ -65,23 +58,19 @@ jobs:
     - name: Install Packages (macOS)
       if: startsWith(runner.os, 'macOS')
       run: |
-        brew install protobuf ninja
+        brew install protobuf ninja docker
 
-    - name: Cache clangir build
-      id: cache-clangir-build
-      uses: actions/cache@v4
-      with:
-        path: clangir/llvm/build
-        key: ${{ matrix.os }}-${{ inputs.CLANGIR_REPOSITORY }}-${{ inputs.CLANGIR_VERSION }}-clangir-build
-
-    - name: Build clangir
+    - name: Concat clangir Docker image tag
       run: |
-        if [[ ! -d clangir/llvm/build ]]
-        then
-          cd clangir/llvm && mkdir -p build && cd build
-          cmake -GNinja -DLLVM_ENABLE_PROJECTS="clang;mlir" -DCLANG_ENABLE_CIR=ON -DCMAKE_BUILD_TYPE=Release ..
-          ninja
-        fi
+        echo "IMAGE_TAG=clangir_${{ matrix.os }}_build:explyt_clangir-${{ inputs.CLANGIR_VERSION }}" \
+          >> $GITHUB_ENV
+
+    - name: Pull clangir build from Docker
+      run: |
+        docker pull ${{ env.IMAGE_TAG }}
+        docker create --name clangir_build ${{ env.IMAGE_TAG }}
+        docker cp clangir_build:/clangir/llvm/build ${{ github.workspace }}/clangir/llvm/build
+        docker rm -f clangir_build
 
     - uses: actions/checkout@v4
       with:
