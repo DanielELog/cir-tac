@@ -13,19 +13,20 @@ jobs:
     runs-on: macos-latest
 
     steps:
+
+      - name: Cache clangir build
+        id: cache-clangir-build
+        uses: actions/cache@v4
+        with:
+          path: clangir
+          key: dummy-input
+
       - name: Dummy input
         run: |
           mkdir clangir
           cd clangir
           touch something.txt
           echo hello >> something.txt
-
-      - name: Upload clangir build
-        uses: actions/upload-artifact@v4
-        with:
-          name: clangir-macos-build-${{ env.CLANGIR_NORMALIZED_REPO }}-${{ env.CLANGIR_VERSION }}
-          path: clangir
-          retention-days: 1
 
   upload:
     runs-on: ubuntu-latest
@@ -35,10 +36,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download clangir built on macOS
-        uses: actions/download-artifact@v4
+      - name: Restore clangir built on macOS
+        uses: actions/cache/restore@v4
         with:
-          name: clangir-macos-build-${{ env.CLANGIR_NORMALIZED_REPO }}-${{ env.CLANGIR_VERSION }}
+          key: dummy-input
           path: clangir
 
       - name: Login to Docker Hub
