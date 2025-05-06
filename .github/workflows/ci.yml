@@ -3,42 +3,41 @@ name: CI
 on:
   workflow_dispatch:
 
-env:
-  CLANGIR_REPOSITORY: "explyt/clangir"
-  CLANGIR_VERSION: "21.03.2025-rc"
-
 jobs:
-  env-setup:
-    runs-on: macos-latest
+  get-clangir-id:
+    runs-on: ubuntu-latest
     outputs:
-      clangir-repository: ${{ steps.set.outputs.clangir-repository }}
-      clangir-version: ${{ steps.set.outputs.clangir-version }}
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
-    - name: Set ClangIR version identification
-      id: set
-      run: |
-        echo "clangir-repository=${{ env.CLANGIR_REPOSITORY }}" >> $GITHUB_OUTPUT
-        echo "clangir-version=${{ env.CLANGIR_VERSION }}" >> $GITHUB_OUTPUT
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Read JSON
+        id: set-matrix
+        run: echo "matrix=$(jq -c . < ./.github/workflows/clangir-version.json)" >> $GITHUB_OUTPUT
 
   build-clangir:
-    needs: env-setup
+    needs: get-clangir-id
     uses: ./.github/workflows/build.yml
     secrets: inherit
-    with:
-      CLANGIR_REPOSITORY: ${{ needs.env-setup.outputs.clangir-repository }}
-      CLANGIR_VERSION: ${{ needs.env-setup.outputs.clangir-version }}
 
   run-gsac-tests:
-    needs: [env-setup, build-clangir]
+    needs: [get-clangir-id, build-clangir]
     uses: ./.github/workflows/gsac-test.yml
+    strategy:
+      matrix:
+        clangir: ${{ fromJSON(needs.get-clangir-id.outputs.matrix) }}
     with:
-      CLANGIR_REPOSITORY: ${{ needs.env-setup.outputs.clangir-repository }}
-      CLANGIR_VERSION: ${{ needs.env-setup.outputs.clangir-version }}
+      CLANGIR_REPOSITORY: ${{ matrix.clangir.repository }}
+      CLANGIR_VERSION: ${{ matrix.clangir.version }}
 
   run-juliet-tests:
     if: github.event_name == 'workflow_dispatch'
-    needs: [env-setup, build-clangir]
+    needs: [get-clangir-id, build-clangir]
     uses: ./.github/workflows/juliet-c-test.yml
+    strategy:
+      matrix:
+        clangir: ${{ fromJSON(needs.get-clangir-id.outputs.matrix) }}
     with:
-      CLANGIR_REPOSITORY: ${{ needs.env-setup.outputs.clangir-repository }}
-      CLANGIR_VERSION: ${{ needs.env-setup.outputs.clangir-version }}
+      CLANGIR_REPOSITORY: ${{ matrix.clangir.repository }}
+      CLANGIR_VERSION: ${{ matrix.clangir.version }}
