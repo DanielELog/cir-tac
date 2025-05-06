@@ -47,5 +47,5 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_TAG }}
           build-args: |
-            CLANGIR_REPOSITORY=${{ matrix.clangir.repository }}
+            CLANGIR_REPOSITORY=https://github.com/${{ matrix.clangir.repository }}
             CLANGIR_VERSION=${{ matrix.clangir.version }}
