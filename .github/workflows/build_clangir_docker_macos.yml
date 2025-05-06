@@ -3,11 +3,6 @@ name: Build and push docker image of ClangIR (MacOS)
 on:
   workflow_dispatch:
 
-env:
-  CLANGIR_REPOSITORY: "explyt/clangir"
-  CLANGIR_NORMALIZED_REPO: "explyt_clangir"
-  CLANGIR_VERSION: "21.03.2025-rc"
-
 jobs:
   get-clangir-id:
     runs-on: ubuntu-latest

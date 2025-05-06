@@ -17,27 +17,31 @@ jobs:
         run: echo "matrix=$(jq -c . < ./.github/workflows/clangir-version.json)" >> $GITHUB_OUTPUT
 
   build-clangir:
-    needs: get-clangir-id
     uses: ./.github/workflows/build.yml
     secrets: inherit
 
   run-gsac-tests:
     needs: [get-clangir-id, build-clangir]
-    uses: ./.github/workflows/gsac-test.yml
     strategy:
       matrix:
         clangir: ${{ fromJSON(needs.get-clangir-id.outputs.matrix) }}
+    uses: ./.github/workflows/run-test-suite.yml
     with:
       CLANGIR_REPOSITORY: ${{ matrix.clangir.repository }}
       CLANGIR_VERSION: ${{ matrix.clangir.version }}
+      TEST_REPOSITORY: "explyt/GSAC"
+      TEST_COMMIT: "macos_version"
 
   run-juliet-tests:
     if: github.event_name == 'workflow_dispatch'
     needs: [get-clangir-id, build-clangir]
-    uses: ./.github/workflows/juliet-c-test.yml
     strategy:
       matrix:
         clangir: ${{ fromJSON(needs.get-clangir-id.outputs.matrix) }}
+    uses: ./.github/workflows/run-test-suite.yml
     with:
       CLANGIR_REPOSITORY: ${{ matrix.clangir.repository }}
       CLANGIR_VERSION: ${{ matrix.clangir.version }}
+      TEST_REPOSITORY: "explyt/juliet-c"
+      TEST_COMMIT: "full-flat"
+      SEARCH_FOR_CIR: true
