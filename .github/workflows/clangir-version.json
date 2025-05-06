@@ -1,8 +1,7 @@
-{
-    "clangir":
+[
     {
         "repository": "explyt/clangir",
         "normalized_repo": "explyt_clangir",
         "version": "21.03.2025-rc"
     }
-}
+]
