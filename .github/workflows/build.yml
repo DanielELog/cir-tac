@@ -22,7 +22,7 @@ jobs:
     strategy:
       matrix:
         clangir: ${{ fromJSON(needs.get-clangir-id.outputs.matrix) }}
-        os: [macos-latest]
+        os: [ubuntu-latest, macos-latest]
 
     steps:
       - name: Concat clangir Docker image tag
@@ -54,7 +54,7 @@ jobs:
     strategy:
       matrix:
         clangir: ${{ fromJSON(needs.get-clangir-id.outputs.matrix) }}
-        os: [macos-latest]
+        os: [ubuntu-latest, macos-latest]
 
     runs-on: ${{ matrix.os }}
 

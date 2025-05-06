@@ -4,8 +4,24 @@ on:
   workflow_dispatch:
 
 jobs:
+  get-clangir-id:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Read JSON
+        id: set-matrix
+        run: echo "matrix=$(jq -c . < ./.github/workflows/clangir-version.json)" >> $GITHUB_OUTPUT
+
   build:
     runs-on: ubuntu-latest
+    needs: get-clangir-id
+    strategy:
+      matrix:
+        clangir: ${{ fromJSON(needs.get-clangir-id.outputs.matrix) }}
 
     steps:
       - name: Checkout
@@ -17,11 +33,21 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push Docker image
+      - name: Set clangir id environment variables
+        run: |
+          echo "CLANGIR_REPOSITORY=${{ matrix.clangir.repository }}" >> $GITHUB_OUTPUT
+          echo "CLANGIR_VERSION=${{ matrix.clangir.version }}" >> $GITHUB_OUTPUT
+
+      - name: Create image tag
+        run: |
+          echo "IMAGE_TAG=clangir_ubuntu-latest_build:${{ matrix.clangir.normalized_repo }}-${{ matrix.clangir.version }}" \
+            >> $GITHUB_ENV
+
+      - name: Build and push Docker image with clangir
         id: push
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./docker/Dockerfile
+          file: ./docker/DockerfileMacOS
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/clangir_linux
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_TAG }}
