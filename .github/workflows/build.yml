@@ -19,7 +19,7 @@ jobs:
     steps:
       - name: Concat clangir Docker image tag
         run: |
-          echo "IMAGE_TAG=clangir_macos-latest_build:explyt_clangir-${{ inputs.CLANGIR_VERSION }}" \
+          echo "IMAGE_TAG=${{ secrets.DOCKERHUB_USERNAME }}/clangir_macos-latest_build:explyt_clangir-${{ inputs.CLANGIR_VERSION }}" \
             >> $GITHUB_ENV
 
       - name: Pull clangir build from Docker
