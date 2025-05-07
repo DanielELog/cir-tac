@@ -38,11 +38,11 @@ jobs:
         run: |
           docker pull ${{ env.IMAGE_TAG }}
           docker create --name clangir_build ${{ env.IMAGE_TAG }}
-          mkdir -p clangir/llvm/build
-          docker cp clangir_build:/clangir/llvm/build ${{ github.workspace }}/clangir_build
+          mkdir clangir_build
+          docker cp clangir_build:/clangir ${{ github.workspace }}/clangir_build
           docker rm -f clangir_build
 
-      - name: Create artifact to pass to macOS runner
+      - name: Create artifacts to pass to runners
         uses: actions/upload-artifact@v4
         with:
           name: clangir_${{ matrix.os }}_build
@@ -98,22 +98,11 @@ jobs:
       run: |
         brew install protobuf ninja
 
-    - name: Checkout clangir sources
-      uses: actions/checkout@v4
-      with:
-        ref: ${{ matrix.clangir.version }}
-        repository: ${{ matrix.clangir.repository }}
-        path: ${{ github.workspace }}/clangir
-
-    - name: Create clangir build directory
-      run: mkdir -p ${{ github.workspace }}/clangir/llvm/build
-
-    - name: Fetch clangir build (macOS)
-      if: startsWith(runner.os, 'macOS')
+    - name: Fetch clangir build
       uses: actions/download-artifact@v4
       with:
         name: clangir_${{ matrix.os }}_build
-        path: ${{ github.workspace }}/clangir/llvm/build
+        path: ${{ github.workspace }}/clangir
 
     - uses: actions/checkout@v4
       with:
