@@ -54,7 +54,7 @@ jobs:
     strategy:
       matrix:
         clangir: ${{ fromJSON(needs.get-clangir-id.outputs.matrix) }}
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest]
 
     runs-on: ${{ matrix.os }}
 
