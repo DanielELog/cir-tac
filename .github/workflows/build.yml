@@ -106,13 +106,34 @@ jobs:
         path: ${{ github.workspace }}/clangir
 
     - name: Make build directory
-      run: mkdir -p ./clangir/llvm/build
+      run: mkdir -p ${{ github.workspace }}/clangir/llvm/build
 
     - name: Fetch clangir build
       uses: actions/download-artifact@v4
       with:
         name: clangir_${{ matrix.os }}_build
         path: ${{ github.workspace }}/clangir/llvm/build
+
+    - run: |
+        ls
+        ls ./clangir
+        echo "is this weird?"
+        if [[ ! -d ${{ github.workspace }}/clangir/llvm/build/bin ]]
+        then
+          echo "this is weird"
+        fi
+        if [[ ! -d ${{ github.workspace }}/clangir/llvm/build ]]
+        then
+          echo "this is weird 2"
+        fi
+        if [[ ! -d ${{ github.workspace }}/clangir/llvm ]]
+        then
+          echo "this is weird 3"
+        fi
+        if [[ ! -d ${{ github.workspace }}/clangir ]]
+        then
+          echo "this is weird 4"
+        fi
 
     - uses: actions/checkout@v4
       with:
