@@ -54,7 +54,7 @@ function buildClangir() {
         -DCLANG_ENABLE_CIR=ON \
         -DCMAKE_BUILD_TYPE=MinSizeRel \
         -GNinja ..
-  ninja -j16 > /dev/null
+  ninja -j16
 
   echo "Finished compilation!"
 
@@ -72,4 +72,6 @@ checkEnvVar CLANGIR_VERSION
 # Install clangir
 if [ -z ${CLANG_BUILD_DIR+x} ]; then
     buildClangir
+    cp $CLANG_BUILD_DIR /clangir_build
+    rm -rf $CLANGIR_SOURCES_PATH
 fi

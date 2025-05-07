@@ -2,4 +2,4 @@ FROM ubuntu:latest
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-COPY clangir ./clangir
+COPY clangir/llvm/build /clangir_build
