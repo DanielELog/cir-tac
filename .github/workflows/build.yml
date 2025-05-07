@@ -39,14 +39,14 @@ jobs:
           docker pull ${{ env.IMAGE_TAG }}
           docker create --name clangir_build ${{ env.IMAGE_TAG }}
           mkdir clangir_build
-          docker cp clangir_build:/clangir_build ${{ github.workspace }}/clangir_build
+          docker cp clangir_build:/clangir_build ${{ github.workspace }}/build
           docker rm -f clangir_build
 
       - name: Create artifacts to pass to runners
         uses: actions/upload-artifact@v4
         with:
           name: clangir_${{ matrix.os }}_build
-          path: ${{ github.workspace }}/clangir_build
+          path: ${{ github.workspace }}/build
           retention-days: 1
 
   build:
@@ -105,35 +105,11 @@ jobs:
         repository: ${{ matrix.clangir.repository }}
         path: ${{ github.workspace }}/clangir
 
-    - name: Make build directory
-      run: mkdir -p ${{ github.workspace }}/clangir/llvm/build
-
     - name: Fetch clangir build
       uses: actions/download-artifact@v4
       with:
         name: clangir_${{ matrix.os }}_build
-        path: ${{ github.workspace }}/clangir/llvm/build
-
-    - run: |
-        ls
-        ls ./clangir
-        echo "is this weird?"
-        if [[ ! -d ${{ github.workspace }}/clangir/llvm/build/bin ]]
-        then
-          echo "this is weird"
-        fi
-        if [[ ! -d ${{ github.workspace }}/clangir/llvm/build ]]
-        then
-          echo "this is weird 2"
-        fi
-        if [[ ! -d ${{ github.workspace }}/clangir/llvm ]]
-        then
-          echo "this is weird 3"
-        fi
-        if [[ ! -d ${{ github.workspace }}/clangir ]]
-        then
-          echo "this is weird 4"
-        fi
+        path: ${{ github.workspace }}/clangir/llvm
 
     - uses: actions/checkout@v4
       with:
