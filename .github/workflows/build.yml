@@ -157,6 +157,11 @@ jobs:
         run: |
           cp -r /protobuf-install/* /usr/local
 
+      - name: Copy clangir build
+        run: |
+          mkdir -p /clangir/llvm/build
+          cp -r /clangir_build /clangir/llvm/build
+
       - uses: actions/checkout@v4
         with:
           path: main
@@ -165,7 +170,7 @@ jobs:
         working-directory: main
         run: |
           mkdir build && cd build
-          cmake -DCLANGIR_BUILD_DIR=/clangir_build .. && make
+          cmake -DCLANGIR_BUILD_DIR=/clangir/llvm/build .. && make
 
       - name: Upload cir-tac build artifact
         uses: actions/upload-artifact@v4
