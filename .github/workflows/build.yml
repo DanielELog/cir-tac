@@ -30,13 +30,11 @@ jobs:
         id: set-image
         run: |
           echo "ubuntu=$(printf "%s" \
-              ${{ secrets.DOCKERHUB_USERNAME}}/\
               clangir_ubuntu-latest_build:\
               ${{ matrix.clangir.normalized_repo }}-\
               ${{ matrix.clangir.version }} \
             )" >> $GITHUB_OUTPUT
           echo "macos=$(printf "%s" \
-              ${{ secrets.DOCKERHUB_USERNAME}}/\
               clangir_macos-latest_build:\
               ${{ matrix.clangir.normalized_repo }}-\
               ${{ matrix.clangir.version }} \
