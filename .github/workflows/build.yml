@@ -123,7 +123,9 @@ jobs:
       matrix:
         clangir: ${{ fromJSON(needs.get-clangir-id.outputs.matrix) }}
         os: [ubuntu-latest]
-    container: ${{ github.secrets.DOCKERHUB_USERNAME }}/${{ needs.get-image-tags.outputs.ubuntu }}
+    env:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+    container: ${{ github.env.DOCKERHUB_USERNAME }}/${{ needs.get-image-tags.outputs.ubuntu }}
 
     steps:
       - name: Install Packages
