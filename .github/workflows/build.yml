@@ -119,7 +119,7 @@ jobs:
         os: [ubuntu-latest]
     env:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-    container: ${{ github.env.DOCKERHUB_USERNAME }}/${{ needs.get-image-tags.outputs.ubuntu }}
+    container: dllog/${{ needs.get-image-tags.outputs.ubuntu }}
 
     runs-on: ${{ matrix.os }}
 
