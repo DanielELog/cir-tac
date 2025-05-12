@@ -126,8 +126,8 @@ jobs:
     steps:
       - name: Install Packages
         run: |
-          sudo apt-get update
-          sudo apt-get install -y -q --no-install-recommends \
+          apt-get update
+          apt-get install -y -q --no-install-recommends \
             ninja-build
 
       - name: Cache Protobuf install
@@ -151,9 +151,9 @@ jobs:
                   -D CMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/protobuf-install \
                   -G Ninja ..
             ninja
-            sudo ninja install
+            ninja install
           fi
-          sudo cp -r $GITHUB_WORKSPACE/protobuf-install/* /usr/local
+          cp -r $GITHUB_WORKSPACE/protobuf-install/* /usr/local
 
       - name: Checkout clangir
         uses: actions/checkout@v4
