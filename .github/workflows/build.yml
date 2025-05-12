@@ -143,7 +143,7 @@ jobs:
           git clone --recursive -c http.sslVerify=false https://github.com/protocolbuffers/protobuf.git
           cd protobuf
           git checkout v29.3
-          git submodule update --init --recursive
+          git submodule update --init --recursive -c http.sslVerify=false
           mkdir build && cd build
           cmake -D CMAKE_BUILD_TYPE=Release \
                 -D protobuf_BUILD_TESTS=OFF \
