@@ -16,85 +16,68 @@ jobs:
         id: set-matrix
         run: echo "matrix=$(jq -c . < ./.github/workflows/clangir-version.json)" >> $GITHUB_OUTPUT
 
-  pull-clangir-build:
+  get-image-tags:
     runs-on: ubuntu-latest
     needs: get-clangir-id
     strategy:
       matrix:
         clangir: ${{ fromJSON(needs.get-clangir-id.outputs.matrix) }}
-        os: [ubuntu-latest, macos-latest]
-
+    outputs:
+      ubuntu-image: ${{ steps.set-image.outputs.ubuntu }}
+      macos-image: ${{ steps.set-image.outputs.macos }}
     steps:
-      - name: Concat clangir Docker image tag
+      - name: Concat image tags
+        id: set-image
         run: |
-          echo "IMAGE_TAG=$(printf "%s" \
+          echo "ubuntu=$(printf "%s" \
               ${{ secrets.DOCKERHUB_USERNAME }}/\
-              clangir_${{ matrix.os }}_build:\
+              clangir_ubuntu-latest_build:\
+              ${{ matrix.clangir.normalized_repo }}-\
+              ${{ matrix.clangir.version }} \
+            )" >> $GITHUB_ENV
+          echo "macos=$(printf "%s" \
+              ${{ secrets.DOCKERHUB_USERNAME }}/\
+              clangir_macos-latest_build:\
               ${{ matrix.clangir.normalized_repo }}-\
               ${{ matrix.clangir.version }} \
             )" >> $GITHUB_ENV
 
+  pull-clangir-build:
+    runs-on: ubuntu-latest
+    needs: [get-clangir-id, get-image-tags]
+    strategy:
+      matrix:
+        clangir: ${{ fromJSON(needs.get-clangir-id.outputs.matrix) }}
+        os: [macos-latest]
+
+    steps:
+      - name: Cache clangir build
+        id: cache-clangir-build
+        uses: actions/cache@v4
+        with:
+          path: build
+          key: ${{ matrix.os }}-${{ matrix.clangir.repository }}-${{ matrix.clangir.version }}-clangir-build
+
       - name: Pull clangir build from Docker
+        if: steps.cache-clangir-build.outputs.cache-hit != 'true'
         run: |
-          docker pull ${{ env.IMAGE_TAG }}
-          docker create --name clangir_build ${{ env.IMAGE_TAG }}
+          docker pull ${{ needs.get-image-tags.outputs.macos-image }}
+          docker create --name clangir_build ${{ needs.get-image-tags.outputs.macos-image }}
           mkdir clangir_build
           docker cp clangir_build:/clangir_build ${{ github.workspace }}/build
           docker rm -f clangir_build
 
-      - name: Create artifacts to pass to runners
-        uses: actions/upload-artifact@v4
-        with:
-          name: clangir_${{ matrix.os }}_build
-          path: ${{ github.workspace }}/build
-          retention-days: 1
-
-  build:
+  build-macos:
     needs: [get-clangir-id, pull-clangir-build]
     strategy:
       matrix:
         clangir: ${{ fromJSON(needs.get-clangir-id.outputs.matrix) }}
-        os: [ubuntu-latest, macos-latest]
+        os: [macos-latest]
 
     runs-on: ${{ matrix.os }}
 
     steps:
-    - name: Install Packages (Linux)
-      if: startsWith(runner.os, 'Linux')
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y -q --no-install-recommends \
-          ninja-build
-
-    - name: Cache Protobuf install (Linux)
-      if: startsWith(runner.os, 'Linux')
-      id: cache-protobuf-install
-      uses: actions/cache@v4
-      with:
-        path: protobuf-install
-        key: ${{ matrix.os }}-protobuf-install
-
-    - name: Install Protobuf (Linux)
-      if: startsWith(runner.os, 'Linux')
-      run: |
-        if [[ ! -d protobuf-install ]]
-        then
-          git clone --recursive https://github.com/protocolbuffers/protobuf.git
-          cd protobuf
-          git checkout v29.3
-          git submodule update --init --recursive
-          mkdir build && cd build
-          cmake -D CMAKE_BUILD_TYPE=Release \
-                -D protobuf_BUILD_TESTS=OFF \
-                -D CMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/protobuf-install \
-                -G Ninja ..
-          ninja
-          sudo ninja install
-        fi
-        sudo cp -r $GITHUB_WORKSPACE/protobuf-install/* /usr/local
-
-    - name: Install Packages (macOS)
-      if: startsWith(runner.os, 'macOS')
+    - name: Install Packages
       run: |
         brew install protobuf ninja
 
@@ -105,38 +88,11 @@ jobs:
         repository: ${{ matrix.clangir.repository }}
         path: ${{ github.workspace }}/clangir
 
-    - name: Fetch clangir build
-      uses: actions/download-artifact@v4
+    - name: Restore clangir build
+      uses: actions/cache/restore@v4
       with:
-        name: clangir_${{ matrix.os }}_build
+        key: ${{ matrix.os }}-${{ matrix.clangir.repository }}-${{ matrix.clangir.version }}-clangir-build
         path: ${{ github.workspace }}/clangir/llvm/build
-
-    - run: |
-        echo ---------------
-        ls
-        echo ---------------
-        ls ./clangir
-        echo ---------------
-        ls ./clangir/llvm
-        echo ---------------
-        ls ./clangir/llvm/build
-        echo "is this weird?"
-        if [[ ! -d ${{ github.workspace }}/clangir/llvm/build/bin ]]
-        then
-          echo "this is weird"
-        fi
-        if [[ ! -d ${{ github.workspace }}/clangir/llvm/build ]]
-        then
-          echo "this is weird 2"
-        fi
-        if [[ ! -d ${{ github.workspace }}/clangir/llvm ]]
-        then
-          echo "this is weird 3"
-        fi
-        if [[ ! -d ${{ github.workspace }}/clangir ]]
-        then
-          echo "this is weird 4"
-        fi
 
     - uses: actions/checkout@v4
       with:
@@ -156,3 +112,73 @@ jobs:
           main/build/tools/cir-ser-proto/cir-ser-proto
           main/build/tools/cir-deser-proto/cir-deser-proto
         retention-days: 1
+
+  build-ubuntu:
+    runs-on: ubuntu-latest
+    needs: [get-clangir-id, get-image-tags]
+    strategy:
+      matrix:
+        clangir: ${{ fromJSON(needs.get-clangir-id.outputs.matrix) }}
+        os: [ubuntu-latest]
+    container: ${{ needs.get-image-tags.outputs.ubuntu-image }}
+
+    steps:
+      - name: Install Packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y -q --no-install-recommends \
+            ninja-build
+
+      - name: Cache Protobuf install
+        id: cache-protobuf-install
+        uses: actions/cache@v4
+        with:
+          path: protobuf-install
+          key: ubuntu-latest-protobuf-install
+
+      - name: Install Protobuf
+        run: |
+          if [[ ! -d protobuf-install ]]
+          then
+            git clone --recursive https://github.com/protocolbuffers/protobuf.git
+            cd protobuf
+            git checkout v29.3
+            git submodule update --init --recursive
+            mkdir build && cd build
+            cmake -D CMAKE_BUILD_TYPE=Release \
+                  -D protobuf_BUILD_TESTS=OFF \
+                  -D CMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/protobuf-install \
+                  -G Ninja ..
+            ninja
+            sudo ninja install
+          fi
+          sudo cp -r $GITHUB_WORKSPACE/protobuf-install/* /usr/local
+
+      - name: Checkout clangir
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.clangir.version }}
+          repository: ${{ matrix.clangir.repository }}
+          path: /clangir
+
+      - name: Copy clangir build inside source
+        run: cp -r /clangir_build /clangir/llvm/build
+
+      - uses: actions/checkout@v4
+        with:
+          path: main
+
+      - name: Build cir-tac
+        working-directory: main
+        run: |
+          mkdir build && cd build
+          cmake -DCLANGIR_BUILD_DIR=$GITHUB_WORKSPACE/clangir/llvm/build .. && make
+
+      - name: Upload cir-tac build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cir-tac-${{ matrix.os }}-${{ runner.arch }}
+          path:  |
+            main/build/tools/cir-ser-proto/cir-ser-proto
+            main/build/tools/cir-deser-proto/cir-deser-proto
+          retention-days: 1
