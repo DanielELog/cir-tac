@@ -30,17 +30,17 @@ jobs:
         id: set-image
         run: |
           echo "ubuntu=$(printf "%s" \
+              ${{ secrets.DOCKERHUB_USERNAME}}/\
               clangir_ubuntu-latest_build:\
               ${{ matrix.clangir.normalized_repo }}-\
               ${{ matrix.clangir.version }} \
-            )" >> $GITHUB_ENV
+            )" >> $GITHUB_OUTPUT
           echo "macos=$(printf "%s" \
+              ${{ secrets.DOCKERHUB_USERNAME}}/\
               clangir_macos-latest_build:\
               ${{ matrix.clangir.normalized_repo }}-\
               ${{ matrix.clangir.version }} \
-            )" >> $GITHUB_ENV
-
-      - run: echo ${{ env.ubuntu }}
+            )" >> $GITHUB_OUTPUT
 
   pull-clangir-build:
     runs-on: ubuntu-latest
@@ -64,8 +64,8 @@ jobs:
       - name: Pull clangir build from Docker
         if: steps.cache-clangir-build.outputs.cache-hit != 'true'
         run: |
-          docker pull ${{ secrets.DOCKERHUB_USERNAME}}/${{ needs.get-image-tags.outputs.macos }}
-          docker create --name clangir_build ${{ secrets.DOCKERHUB_USERNAME}}/${{ needs.get-image-tags.outputs.macos }}
+          docker pull ${{ needs.get-image-tags.outputs.macos }}
+          docker create --name clangir_build ${{ needs.get-image-tags.outputs.macos }}
           mkdir clangir_build
           docker cp clangir_build:/clangir_build ${{ github.workspace }}/build
           docker rm -f clangir_build
@@ -123,7 +123,7 @@ jobs:
       matrix:
         clangir: ${{ fromJSON(needs.get-clangir-id.outputs.matrix) }}
         os: [ubuntu-latest]
-    container: ${{ needs.get-image-tags.outputs.ubuntu-image }}
+    container: ${{ needs.get-image-tags.outputs.ubuntu }}
 
     steps:
       - name: Install Packages
