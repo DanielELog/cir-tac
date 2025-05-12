@@ -40,6 +40,8 @@ jobs:
               ${{ matrix.clangir.version }} \
             )" >> $GITHUB_ENV
 
+      - run: echo ${{ env.ubuntu }}
+
   pull-clangir-build:
     runs-on: ubuntu-latest
     needs: [get-clangir-id, get-image-tags]
