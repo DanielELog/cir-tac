@@ -42,27 +42,15 @@ jobs:
 
       - run: echo ${{ steps.set-image.outputs.ubuntu }}
 
-  pull-clangir-build:
+  pull-macos-clangir-build:
     runs-on: ubuntu-latest
     needs: [get-clangir-id, get-image-tags]
     strategy:
       matrix:
         clangir: ${{ fromJSON(needs.get-clangir-id.outputs.matrix) }}
-        os: [macos-latest]
 
     steps:
-      - name: Cache clangir build
-        id: cache-clangir-build
-        uses: actions/cache@v4
-        with:
-          path: build
-          key: ${{ matrix.os }}-${{ matrix.clangir.repository }}-${{ matrix.clangir.version }}-clangir-build
-
-      - name: Print image tag
-        run: echo ${{ needs.get-image-tags.outputs.macos }}
-
       - name: Pull clangir build from Docker
-        if: steps.cache-clangir-build.outputs.cache-hit != 'true'
         run: |
           docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ needs.get-image-tags.outputs.macos }}
           docker create --name clangir_build ${{ secrets.DOCKERHUB_USERNAME }}/${{ needs.get-image-tags.outputs.macos }}
@@ -70,8 +58,15 @@ jobs:
           docker cp clangir_build:/clangir_build ${{ github.workspace }}/build
           docker rm -f clangir_build
 
+      - name: Create artifacts to pass to runners
+        uses: actions/upload-artifact@v4
+        with:
+          name: clangir_macos-latest_build
+          path: ${{ github.workspace }}/build
+          retention-days: 1
+
   build-macos:
-    needs: [get-clangir-id, pull-clangir-build]
+    needs: [get-clangir-id, pull-macos-clangir-build]
     strategy:
       matrix:
         clangir: ${{ fromJSON(needs.get-clangir-id.outputs.matrix) }}
@@ -91,10 +86,10 @@ jobs:
         repository: ${{ matrix.clangir.repository }}
         path: ${{ github.workspace }}/clangir
 
-    - name: Restore clangir build
-      uses: actions/cache/restore@v4
+    - name: Fetch clangir build
+      uses: actions/download-artifact@v4
       with:
-        key: ${{ matrix.os }}-${{ matrix.clangir.repository }}-${{ matrix.clangir.version }}-clangir-build
+        name: clangir_macos-latest_build
         path: ${{ github.workspace }}/clangir/llvm/build
 
     - uses: actions/checkout@v4
@@ -117,7 +112,6 @@ jobs:
         retention-days: 1
 
   build-ubuntu:
-    runs-on: ubuntu-latest
     needs: [get-clangir-id, get-image-tags]
     strategy:
       matrix:
@@ -126,6 +120,8 @@ jobs:
     env:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
     container: ${{ github.env.DOCKERHUB_USERNAME }}/${{ needs.get-image-tags.outputs.ubuntu }}
+
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: Install Packages
