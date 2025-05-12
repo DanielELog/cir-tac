@@ -42,6 +42,8 @@ jobs:
               ${{ matrix.clangir.version }} \
             )" >> $GITHUB_OUTPUT
 
+      - run: echo ${{ steps.set-image.outputs.ubuntu }}
+
   pull-clangir-build:
     runs-on: ubuntu-latest
     needs: [get-clangir-id, get-image-tags]
