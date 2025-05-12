@@ -140,10 +140,11 @@ jobs:
       - name: Build Protobuf
         if: steps.cache-protobuf-install.outputs.cache-hit != 'true'
         run: |
-          git clone --recursive -c http.sslVerify=false https://github.com/protocolbuffers/protobuf.git
+          git config --global http.sslverify false
+          git clone --recursive https://github.com/protocolbuffers/protobuf.git
           cd protobuf
           git checkout v29.3
-          git submodule update --init --recursive -c http.sslVerify=false
+          git submodule update --init --recursive
           mkdir build && cd build
           cmake -D CMAKE_BUILD_TYPE=Release \
                 -D protobuf_BUILD_TESTS=OFF \
