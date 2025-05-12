@@ -23,8 +23,8 @@ jobs:
       matrix:
         clangir: ${{ fromJSON(needs.get-clangir-id.outputs.matrix) }}
     outputs:
-      ubuntu-image: ${{ steps.set-image.outputs.ubuntu }}
-      macos-image: ${{ steps.set-image.outputs.macos }}
+      ubuntu: ${{ steps.set-image.outputs.ubuntu }}
+      macos: ${{ steps.set-image.outputs.macos }}
     steps:
       - name: Concat image tags
         id: set-image
@@ -57,13 +57,13 @@ jobs:
           key: ${{ matrix.os }}-${{ matrix.clangir.repository }}-${{ matrix.clangir.version }}-clangir-build
 
       - name: Print image tag
-        run: echo ${{ needs.get-image-tags.outputs.macos-image }}
+        run: echo ${{ needs.get-image-tags.outputs.macos }}
 
       - name: Pull clangir build from Docker
         if: steps.cache-clangir-build.outputs.cache-hit != 'true'
         run: |
-          docker pull ${{ secrets.DOCKERHUB_USERNAME}}/${{ needs.get-image-tags.outputs.macos-image }}
-          docker create --name clangir_build ${{ secrets.DOCKERHUB_USERNAME}}/${{ needs.get-image-tags.outputs.macos-image }}
+          docker pull ${{ secrets.DOCKERHUB_USERNAME}}/${{ needs.get-image-tags.outputs.macos }}
+          docker create --name clangir_build ${{ secrets.DOCKERHUB_USERNAME}}/${{ needs.get-image-tags.outputs.macos }}
           mkdir clangir_build
           docker cp clangir_build:/clangir_build ${{ github.workspace }}/build
           docker rm -f clangir_build
