@@ -124,6 +124,13 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
+      - run: |
+          ls
+          echo "---------"
+          pwd
+          echo "---------"
+          ls /
+
       - name: Install Packages
         run: |
           apt-get update
