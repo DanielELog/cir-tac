@@ -124,6 +124,11 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
+      - name: Copy clangir build
+        run: |
+          mkdir -p /clangir/llvm/build
+          cp -r /clangir_build /clangir/llvm/build
+
       - run: |
           ls
           echo "---------"
@@ -163,11 +168,6 @@ jobs:
       - name: Install Protobuf
         run: |
           cp -r /protobuf-install/* /usr/local
-
-      - name: Copy clangir build
-        run: |
-          mkdir -p /clangir/llvm/build
-          cp -r /clangir_build /clangir/llvm/build
 
       - uses: actions/checkout@v4
         with:
