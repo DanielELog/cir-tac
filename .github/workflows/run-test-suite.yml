@@ -48,11 +48,15 @@ jobs:
         repository: ${{ inputs.TEST_REPOSITORY }}
         path: ${{ env.TEST_DIRECTORY }}
 
-    - name: Restore clangir build
-      uses: actions/cache/restore@v4
+    - name: Download clangir build
+      uses: actions/download-artifact@v4
       with:
+        name: clangir_${{ matrix.os }}_build
         path: clangir/llvm/build
-        key: ${{ matrix.os }}-${{ inputs.CLANGIR_REPOSITORY }}-${{ inputs.CLANGIR_VERSION }}-clangir-build
+
+    - name: Add permissions to clang tools
+      run: |
+        chmod -R +x clangir/llvm/build/bin
 
     - name: Download cir-tac precompiled tools
       uses: actions/download-artifact@v4
