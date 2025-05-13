@@ -52,12 +52,12 @@ jobs:
 
     steps:
       - name: Get image tag (Linux)
-        if: startsWith(runner.os, 'Linux')
+        if: startsWith(matrix.os, 'ubuntu')
         run: |
           echo "IMAGE_TAG=${{ needs.get-image-tags.outputs.ubuntu }}" >> $GITHUB_ENV
 
       - name: Get image tag (macOS)
-        if: startsWith(runner.os, 'macOS')
+        if: startsWith(matrix.os, 'macos')
         run: |
           echo "IMAGE_TAG=${{ needs.get-image-tags.outputs.macos }}" >> $GITHUB_ENV
 
