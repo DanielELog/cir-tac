@@ -157,6 +157,18 @@ jobs:
         run: |
           cp -r /protobuf-install/* /usr/local
 
+      - name: Checkout clangir
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.clangir.version }}
+          repository: ${{ matrix.clangir.repository }}
+          path: clangir
+
+      - name: Copy clangir to root
+        run: |
+          mkdir /clangir
+          cp -r clangir/* /clangir
+
       - name: Copy clangir build
         run: |
           mkdir -p /clangir/llvm/build
