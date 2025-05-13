@@ -124,18 +124,6 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - name: Copy clangir build
-        run: |
-          mkdir -p /clangir/llvm/build
-          cp -r /clangir_build /clangir/llvm/build
-
-      - run: |
-          ls
-          echo "---------"
-          pwd
-          echo "---------"
-          ls /
-
       - name: Install Packages
         run: |
           apt-get update
@@ -169,6 +157,11 @@ jobs:
         run: |
           cp -r /protobuf-install/* /usr/local
 
+      - name: Copy clangir build
+        run: |
+          mkdir -p /clangir/llvm/build
+          cp -r /clangir_build /clangir/llvm/build
+
       - uses: actions/checkout@v4
         with:
           path: main
@@ -177,7 +170,9 @@ jobs:
         working-directory: main
         run: |
           mkdir build && cd build
-          cmake -DCLANGIR_BUILD_DIR=/clangir/llvm/build .. && make
+          cmake -DCLANGIR_BUILD_DIR=/clangir/llvm/build \
+                -DMLIR_DIR=/clangir/llvm/build/lib/cmake/mlir \
+                .. && make
 
       - name: Upload cir-tac build artifact
         uses: actions/upload-artifact@v4
