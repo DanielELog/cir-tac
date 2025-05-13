@@ -160,7 +160,7 @@ jobs:
       - name: Copy clangir build
         run: |
           mkdir -p /clangir/llvm/build
-          cp -r /clangir_build /clangir/llvm/build
+          cp -r /clangir_build/* /clangir/llvm/build
 
       - uses: actions/checkout@v4
         with:
@@ -171,7 +171,6 @@ jobs:
         run: |
           mkdir build && cd build
           cmake -DCLANGIR_BUILD_DIR=/clangir/llvm/build \
-                -DMLIR_DIR=/clangir/llvm/build/lib/cmake/mlir \
                 .. && make
 
       - name: Upload cir-tac build artifact
