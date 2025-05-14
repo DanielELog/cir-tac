@@ -54,7 +54,7 @@ function buildClangir() {
         -DCLANG_ENABLE_CIR=ON \
         -DCMAKE_BUILD_TYPE=MinSizeRel \
         -GNinja ..
-  ninja -j16
+  ninja -j16 >/dev/null
 
   echo "Finished compilation!"
 
