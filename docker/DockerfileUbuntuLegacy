@@ -10,8 +10,7 @@ RUN apt-get install -yqq --no-install-recommends \
   zstd \
   wget \
   git python3 g++ make ninja-build zlib1g-dev
-RUN rm /bin/sh
-RUN ln -s /bin/bash /bin/sh
+
 # Install cmake
 RUN wget https://github.com/Kitware/CMake/releases/download/v3.27.0/cmake-3.27.0-linux-x86_64.sh
 RUN chmod +x cmake-3.27.0-linux-x86_64.sh
