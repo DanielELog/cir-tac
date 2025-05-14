@@ -1,0 +1,52 @@
+name: Build and push docker image of ClangIR (Linux legacy)
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  get-clangir-id:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Read JSON
+        id: set-matrix
+        run: echo "matrix=$(jq -c . < ./.github/workflows/clangir-version.json)" >> $GITHUB_OUTPUT
+
+  build:
+    runs-on: ubuntu-latest
+    needs: get-clangir-id
+    strategy:
+      matrix:
+        clangir: ${{ fromJSON(needs.get-clangir-id.outputs.matrix) }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Create image tag
+        run: |
+          echo "IMAGE_TAG=clangir_ubuntu-legacy_build:${{ matrix.clangir.organization }}_${{ matrix.clangir.repository }}-${{ matrix.clangir.version }}" \
+            >> $GITHUB_ENV
+
+      - name: Build and push Docker image with clangir
+        id: push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./docker/DockerfileUbuntuLegacy
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_TAG }}
+          build-args: |
+            CLANGIR_REPOSITORY=https://github.com/${{ matrix.clangir.organization }}/${{ matrix.clangir.repository }}
+            CLANGIR_VERSION=${{ matrix.clangir.version }}

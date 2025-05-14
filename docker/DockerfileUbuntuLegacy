@@ -1,0 +1,26 @@
+FROM ubuntu:20.04
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+# Install packages
+RUN apt-get update
+RUN apt-get install -yqq --no-install-recommends \
+  ca-certificates \
+  git-core \
+  zstd \
+  wget \
+  git python3 g++ make ninja-build zlib1g-dev
+RUN rm /bin/sh
+RUN ln -s /bin/bash /bin/sh
+# Install cmake
+RUN wget https://github.com/Kitware/CMake/releases/download/v3.27.0/cmake-3.27.0-linux-x86_64.sh
+RUN chmod +x cmake-3.27.0-linux-x86_64.sh
+RUN ./cmake-3.27.0-linux-x86_64.sh --prefix=/usr/local --skip-license
+
+COPY docker/buildClangir.sh ./
+
+ARG CLANGIR_REPOSITORY=$CLANGIR_REPOSITORY
+ARG CLANGIR_VERSION=$CLANGIR_VERSION
+
+RUN chmod +x buildClangir.sh
+RUN ./buildClangir.sh

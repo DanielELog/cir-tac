@@ -72,6 +72,6 @@ checkEnvVar CLANGIR_VERSION
 # Install clangir
 if [ -z ${CLANG_BUILD_DIR+x} ]; then
     buildClangir
-    cp -r $CLANG_BUILD_DIR/* /clangir_build
+    cp -r $CLANG_BUILD_DIR /clangir_build
     rm -rf $CLANGIR_SOURCES_PATH
 fi
