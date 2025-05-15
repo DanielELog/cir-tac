@@ -17,6 +17,14 @@ jobs:
         id: set-matrix
         run: echo "matrix=$(jq -c . < ./.github/workflows/clangir-version.json)" >> $GITHUB_OUTPUT
 
+  check-mnt-availability:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          touch /mnt/hello
+          echo "Hello world!" > /mnt/hello
+          cat /mnt/hello
+
   build:
     runs-on: ubuntu-latest
     needs: get-clangir-id
