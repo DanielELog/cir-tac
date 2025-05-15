@@ -21,13 +21,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          touch /mnt/hello
-          echo "Hello world!" > /mnt/hello
-          cat /mnt/hello
+          sudo mkdir -p /mnt/share
+      - run: |
+          sudo touch /mnt/share/hello
+      - run: |
+          sudo echo "Hello world!" > /mnt/share/hello
+      - run: |
+          sudo cat /mnt/share/hello
 
   build:
     runs-on: ubuntu-latest
-    needs: get-clangir-id
+    needs: [check-mnt-availability, get-clangir-id]
     strategy:
       matrix:
         clangir: ${{ fromJSON(needs.get-clangir-id.outputs.matrix) }}
