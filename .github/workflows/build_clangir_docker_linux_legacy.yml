@@ -23,6 +23,7 @@ jobs:
       - run: |
           sudo mkdir -p /mnt/share
       - run: |
+          sudo chmod 777 /mnt/share
           sudo touch /mnt/share/hello
       - run: |
           sudo echo "Hello world!" > /mnt/share/hello
