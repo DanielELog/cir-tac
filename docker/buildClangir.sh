@@ -37,11 +37,12 @@ function gitCloneAndCheckout() {
 }
 
 function buildClangir() {
-  echo "Compiling clangir..."
+  echo "Cloning clangir..."
   CLANGIR_SOURCES_PATH=$(gitCloneAndCheckout "$CLANGIR_REPOSITORY" "$CLANGIR_VERSION")
   export CLANGIR_SOURCES_PATH
   rm -rf $CLANGIR_SOURCES_PATH/.github
   echo "Successfully cloned clangir!"
+  echo "Starting compilation..."
 
   # -> clangir/llvm/build
   mkdir -p "$CLANGIR_SOURCES_PATH"/llvm/build

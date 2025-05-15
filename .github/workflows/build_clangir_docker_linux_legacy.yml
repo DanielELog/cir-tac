@@ -47,11 +47,17 @@ jobs:
           echo "IMAGE_TAG=clangir_ubuntu-legacy_build:${{ matrix.clangir.organization }}_${{ matrix.clangir.repository }}-${{ matrix.clangir.version }}" \
             >> $GITHUB_ENV
 
+      - name: Prepare mnt for mount
+        run: |
+          sudo mkdir /mnt/dist
+          sudo chmod 777 /mnt/dist
+
       - name: Build and push Docker image with clangir
         id: push
         uses: docker/build-push-action@v6
         with:
           context: .
+          build-context: dist=/mnt/dist
           file: ./docker/DockerfileUbuntuLegacy
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_TAG }}

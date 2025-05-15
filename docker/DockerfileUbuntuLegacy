@@ -23,4 +23,7 @@ ARG CLANGIR_REPOSITORY=$CLANGIR_REPOSITORY
 ARG CLANGIR_VERSION=$CLANGIR_VERSION
 
 RUN chmod +x buildClangir.sh
-RUN ./buildClangir.sh
+RUN --mount=type=bind,target=/mnt/dist,rw <<EOF
+cd /mnt/dist
+./buildClangir.sh
+EOF
